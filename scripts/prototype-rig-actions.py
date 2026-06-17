@@ -20,6 +20,8 @@ ARTIFACT_ROOT = ROOT / "artifacts" / "rig-prototype"
 CANVAS_SIZE = 768
 CHARACTER_HEIGHT = 690
 FOOT_Y = 742
+NORMALIZED_ALPHA_SIZE = 256
+MAX_NORMALIZED_ALPHA_LOSS_PCT = 9.0
 
 HIT_REGIONS = [
     {"id": "face", "x": 0.36, "y": 0.18, "w": 0.28, "h": 0.18},
@@ -914,21 +916,43 @@ def alpha_bbox(alpha: np.ndarray) -> list[int] | None:
     return [int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1]
 
 
+def normalized_alpha_mask(frame: Image.Image) -> np.ndarray:
+    alpha = np.array(frame.getchannel("A"))
+    ys, xs = np.where(alpha > 8)
+    if len(xs) == 0 or len(ys) == 0:
+        return np.zeros((NORMALIZED_ALPHA_SIZE, NORMALIZED_ALPHA_SIZE), dtype=bool)
+
+    cropped = (alpha[ys.min() : ys.max() + 1, xs.min() : xs.max() + 1] > 32).astype(np.uint8) * 255
+    normalized = Image.fromarray(cropped, "L").resize(
+        (NORMALIZED_ALPHA_SIZE, NORMALIZED_ALPHA_SIZE),
+        Image.Resampling.NEAREST,
+    )
+    return np.array(normalized) > 0
+
+
 def save_quality_report(sequences: dict[str, list[Image.Image]]) -> None:
     ARTIFACT_ROOT.mkdir(parents=True, exist_ok=True)
+    quality_failures: list[str] = []
     report: dict[str, object] = {
         "frameWidth": CANVAS_SIZE,
         "frameHeight": CANVAS_SIZE,
+        "normalizedAlphaSize": NORMALIZED_ALPHA_SIZE,
+        "maxNormalizedAlphaLossPct": MAX_NORMALIZED_ALPHA_LOSS_PCT,
         "sequenceCount": len(sequences),
         "frameCountTotal": sum(len(frames) for frames in sequences.values()),
+        "qualityFailures": quality_failures,
         "sequences": {},
     }
     sequence_reports: dict[str, object] = {}
 
     for name, frames in sequences.items():
         first = np.array(frames[0]).astype(np.int16)
+        first_normalized_mask = normalized_alpha_mask(frames[0])
+        first_normalized_pixels = max(1, int(np.count_nonzero(first_normalized_mask)))
         changed_pixels: list[int] = []
         alpha_pixels: list[int] = []
+        normalized_alpha_loss: list[int] = []
+        normalized_alpha_gain: list[int] = []
         corner_alpha_max = 0
         bboxes: list[list[int] | None] = []
 
@@ -947,9 +971,20 @@ def save_quality_report(sequences: dict[str, list[Image.Image]]) -> None:
                 int(alpha[-1, -1]),
             )
             bboxes.append(alpha_bbox(alpha))
+            normalized_mask = normalized_alpha_mask(frame)
+            normalized_alpha_loss.append(int(np.count_nonzero(first_normalized_mask & ~normalized_mask)))
+            normalized_alpha_gain.append(int(np.count_nonzero(~first_normalized_mask & normalized_mask)))
 
         columns, rows = sheet_layout(len(frames))
         sheet_file = SHEET_ROOT / f"{name}.png"
+        normalized_loss_pct = round(max(normalized_alpha_loss) / first_normalized_pixels * 100, 2)
+        if normalized_loss_pct > MAX_NORMALIZED_ALPHA_LOSS_PCT:
+            quality_failures.append(
+                f"{name} normalized alpha loss {normalized_loss_pct}% exceeds {MAX_NORMALIZED_ALPHA_LOSS_PCT}%"
+            )
+        if corner_alpha_max > 0:
+            quality_failures.append(f"{name} has non-zero corner alpha {corner_alpha_max}")
+
         sequence_reports[name] = {
             "frames": len(frames),
             "sheet": sheet_path(name),
@@ -960,6 +995,9 @@ def save_quality_report(sequences: dict[str, list[Image.Image]]) -> None:
             "alphaPixelsMin": min(alpha_pixels),
             "alphaPixelsMax": max(alpha_pixels),
             "cornerAlphaMax": corner_alpha_max,
+            "normalizedAlphaLossMax": max(normalized_alpha_loss),
+            "normalizedAlphaLossPctMax": normalized_loss_pct,
+            "normalizedAlphaGainMax": max(normalized_alpha_gain),
             "firstBBox": bboxes[0],
             "lastBBox": bboxes[-1],
         }
@@ -969,6 +1007,8 @@ def save_quality_report(sequences: dict[str, list[Image.Image]]) -> None:
         json.dumps(report, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
+    if quality_failures:
+        raise RuntimeError("Rig quality gate failed: " + "; ".join(quality_failures))
 
 
 def main() -> None:

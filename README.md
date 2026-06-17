@@ -98,6 +98,8 @@ artifacts\rig-prototype\rig_diagnostics.png
 artifacts\rig-prototype\rig_quality_report.json
 ```
 
+质量报告会检查透明边界和归一化 alpha 覆盖损失；如果拆层形变造成明显透明空洞，生成脚本会失败。
+
 ## 资源检查
 
 运行：
