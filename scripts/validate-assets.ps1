@@ -6,11 +6,10 @@ $manifestPath = Join-Path $assetRoot "animation-manifest.json"
 $propManifestPath = Join-Path $assetRoot "prop-manifest.m8.json"
 $motionSeqPath = Join-Path $assetRoot "motion-sequence.m8.json"
 $xamlPath = Join-Path $projectRoot "src\DesktopPet.App\PetWindow.xaml"
-$allowedReferenceImage = "reference$([System.IO.Path]::DirectorySeparatorChar)character_reference.png"
 
 if (!(Test-Path $manifestPath)) { throw "Missing animation-manifest.json" }
 
-$manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
+$manifest = Get-Content $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
 $missing = New-Object System.Collections.Generic.List[string]
 $usedImages = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
 
@@ -65,7 +64,7 @@ foreach ($prop in $manifest.animations.PSObject.Properties) {
 }
 
 if (Test-Path $xamlPath) {
-    $xaml = Get-Content $xamlPath -Raw
+    $xaml = Get-Content $xamlPath -Raw -Encoding UTF8
     $matches = [regex]::Matches($xaml, 'Source="assets/([^"]+\.(png|jpg|jpeg|webp|gif|bmp))"', "IgnoreCase")
     foreach ($match in $matches) {
         Add-AssetReference "xaml image" $match.Groups[1].Value
@@ -74,7 +73,7 @@ if (Test-Path $xamlPath) {
 
 $definedProps = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
 if (Test-Path $propManifestPath) {
-    $propManifest = Get-Content $propManifestPath -Raw | ConvertFrom-Json
+    $propManifest = Get-Content $propManifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
     foreach ($p in $propManifest.props.PSObject.Properties) {
         if (-not $p.Value.id) { $missing.Add("prop-manifest: $($p.Name) missing id") }
         if (-not $p.Value.sheet) {
@@ -88,7 +87,7 @@ if (Test-Path $propManifestPath) {
 
 $seqCount = 0
 if (Test-Path $motionSeqPath) {
-    $motionSeq = Get-Content $motionSeqPath -Raw | ConvertFrom-Json
+    $motionSeq = Get-Content $motionSeqPath -Raw -Encoding UTF8 | ConvertFrom-Json
     foreach ($s in $motionSeq.sequences.PSObject.Properties) {
         $seqCount++
         $stepIdx = 0
@@ -111,9 +110,6 @@ $allImages = Get-ChildItem $assetRoot -Recurse -File |
 $unreferenced = New-Object System.Collections.Generic.List[string]
 foreach ($image in $allImages) {
     $relative = Get-AssetRelativePath $image.FullName
-    if ($relative -ne $allowedReferenceImage) {
-        $missing.Add("non-reference image -> $relative")
-    }
     if (-not $usedImages.Contains($relative)) {
         $unreferenced.Add($relative)
     }
@@ -123,8 +119,15 @@ if ($allImages.Count -ne 1) {
     $missing.Add("expected exactly one image asset, found $($allImages.Count)")
 }
 
-if (-not $usedImages.Contains($allowedReferenceImage)) {
-    $missing.Add("reference image is not used -> $allowedReferenceImage")
+if ($allImages.Count -eq 1) {
+    $referenceImage = Get-AssetRelativePath $allImages[0].FullName
+    $referencePrefix = "reference$([System.IO.Path]::DirectorySeparatorChar)"
+    if (-not $referenceImage.StartsWith($referencePrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+        $missing.Add("reference image must live under reference -> $referenceImage")
+    }
+    if (-not $usedImages.Contains($referenceImage)) {
+        $missing.Add("reference image is not used -> $referenceImage")
+    }
 }
 
 if ($unreferenced.Count -gt 0) {

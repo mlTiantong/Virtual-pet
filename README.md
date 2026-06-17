@@ -4,7 +4,7 @@
 
 当前美术资源已重置为参考图模式：
 
-- `assets/reference/character_reference.png` 是唯一保留的人物基础参考图。
+- `assets/reference/参考图.png` 是唯一保留的人物基础参考图。
 - `assets/animation-manifest.json` 只把默认动画映射到这张参考图。
 - `assets/motion-sequence.m8.json` 和 `assets/prop-manifest.m8.json` 保留为空壳，避免旧投喂道具引用。
 - 不统一的动作帧、SpriteSheet、预览图、道具图、服装/装饰图、旧绿幕源图和 contact sheet 均已移除。
@@ -68,7 +68,7 @@ src/DesktopPet.App/assets/
 ├─ motion-sequence.m8.json
 ├─ prop-manifest.m8.json
 ├─ reference/
-│  └─ character_reference.png
+│  └─ 参考图.png
 └─ dialogue/
 ```
 
@@ -92,5 +92,5 @@ src/DesktopPet.App/assets/
 
 1. 运行 `scripts/validate-assets.ps1`。
 2. 运行 `scripts/run.ps1` 验证窗口、透明穿透、HUD 和交互。
-3. 基于 `assets/reference/character_reference.png` 重新设计统一规格的动作资源。
+3. 基于 `assets/reference/参考图.png` 重新设计统一规格的动作资源。
 4. 动作资源统一后，再恢复 manifest、预览图和道具序列。

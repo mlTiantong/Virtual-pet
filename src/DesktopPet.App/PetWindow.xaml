@@ -242,7 +242,7 @@
                 <TextBlock Text="已加载：" Foreground="#F2F8FF" FontWeight="SemiBold" FontSize="14" />
                 <TextBlock Text="基础人物参考图" Foreground="#7FB1FF" FontWeight="Bold" FontSize="14" />
               </StackPanel>
-              <TextBlock Text="当前已移除不统一动作素材，仅保留 reference/character_reference.png。" Foreground="#C9D7EA" FontSize="12" Margin="28,0,0,12" TextWrapping="Wrap" />
+              <TextBlock Text="当前已移除不统一动作素材，仅保留 reference/参考图.png。" Foreground="#C9D7EA" FontSize="12" Margin="28,0,0,12" TextWrapping="Wrap" />
             </StackPanel>
           </TabItem>
         </TabControl>
