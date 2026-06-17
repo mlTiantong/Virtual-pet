@@ -135,12 +135,12 @@ def make_layers(character: Image.Image, bbox: tuple[int, int, int, int]) -> tupl
     y_norm = (y - y0) / max(1.0, height)
     side_gate = np.clip((x_norm_from_center - 0.48) / 0.20, 0, 1)
     vertical_gate = np.clip((y_norm - 0.18) / 0.18, 0, 1) * np.clip((0.90 - y_norm) / 0.16, 0, 1)
-    hair_weight = np.where(side_gate * vertical_gate > 0.28, 1.0, 0.0)
+    hair_weight = np.clip((side_gate * vertical_gate - 0.20) / 0.45, 0, 1)
 
     arr = np.array(character).astype(np.float32)
     alpha = arr[..., 3] / 255.0
     hair_alpha = alpha * hair_weight
-    body_alpha = alpha * (1.0 - hair_weight)
+    body_alpha = alpha * (1.0 - hair_weight * 0.42)
     upper_alpha = body_alpha * upper_weight
     lower_alpha = body_alpha * (1.0 - upper_weight)
 
@@ -384,6 +384,38 @@ def hover_frames(count: int) -> list[RigFrame]:
                 hair_angle=1.0 * math.sin(phase + 1.7),
                 hair_wave=2.4,
                 hair_wave_phase=phase + 2.6,
+            )
+        )
+    return frames
+
+
+def drag_start_frames(count: int) -> list[RigFrame]:
+    frames: list[RigFrame] = []
+    for i in range(count):
+        t = i / max(1, count - 1)
+        lift = 1.0 - (1.0 - t) ** 3
+        snap = math.sin(math.pi * t)
+        overshoot = math.sin(math.tau * t) * (1.0 - t)
+        frames.append(
+            RigFrame(
+                lower_dy=-30.0 * lift - 4.0 * overshoot,
+                lower_sx=1.0 - 0.010 * lift,
+                lower_sy=1.0 + 0.022 * lift,
+                lower_angle=1.8 * snap,
+                lower_wave=4.0 * snap,
+                lower_wave_phase=t * math.tau + 1.5,
+                upper_dy=-35.0 * lift - 5.0 * overshoot,
+                upper_sx=1.0 - 0.012 * lift,
+                upper_sy=1.0 + 0.025 * lift,
+                upper_angle=-1.6 * overshoot,
+                upper_pull_y=-3.0 * snap,
+                upper_pull_focus_y=0.34,
+                upper_wave=6.2 * snap,
+                upper_wave_phase=t * math.tau + 2.2,
+                hair_dy=-6.0 * lift,
+                hair_angle=-3.8 * snap,
+                hair_wave=6.0 * snap,
+                hair_wave_phase=t * math.tau + 3.0,
             )
         )
     return frames
@@ -698,6 +730,7 @@ def sequence_defs() -> list[SequenceDef]:
     return [
         SequenceDef("idle_m8", idle_frames(16), fps=8, loop=True, duration_ms=0, return_to_idle=False),
         SequenceDef("hover_m8", hover_frames(12), fps=10, loop=False, duration_ms=1200),
+        SequenceDef("drag_start", drag_start_frames(8), fps=14, loop=False, duration_ms=560, return_to_idle=False),
         SequenceDef("drag_hold", drag_hold_frames(12), fps=10, loop=True, duration_ms=0, return_to_idle=False),
         SequenceDef("drop", drop_frames(), fps=12, loop=False, duration_ms=1000),
         SequenceDef("pat_head_m8", pat_head_frames(8), fps=12, loop=False, duration_ms=700),
@@ -783,7 +816,7 @@ def write_manifest(defs: list[SequenceDef]) -> None:
         "schema": 2,
         "characterId": "blue_girl_m1",
         "defaultAnimation": "idle_m8",
-        "assetBaseline": "rig_prototype_v4_side_hair",
+        "assetBaseline": "rig_prototype_v5_drag_start",
         "hitRegions": HIT_REGIONS,
         "animations": animations,
     }

@@ -2,7 +2,7 @@
   "schema": 2,
   "characterId": "blue_girl_m1",
   "defaultAnimation": "idle_m8",
-  "assetBaseline": "rig_prototype_v4_side_hair",
+  "assetBaseline": "rig_prototype_v5_drag_start",
   "hitRegions": [
     {
       "id": "face",
@@ -71,6 +71,21 @@
       "columns": 4,
       "rows": 3,
       "frameCount": 12,
+      "frameWidth": 768,
+      "frameHeight": 768,
+      "frames": []
+    },
+    "drag_start": {
+      "id": "drag_start",
+      "type": "spritesheet",
+      "fps": 14,
+      "loop": false,
+      "durationMs": 560,
+      "returnToIdle": false,
+      "sheet": "runtime/sheets/drag_start.png",
+      "columns": 4,
+      "rows": 2,
+      "frameCount": 8,
       "frameWidth": 768,
       "frameHeight": 768,
       "frames": []

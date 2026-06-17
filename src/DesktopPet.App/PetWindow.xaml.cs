@@ -73,7 +73,7 @@ public partial class PetWindow : Window
         InitializeComponent();
         _assetRoot = System.IO.Path.Combine(AppContext.BaseDirectory, "assets");
         _catalog = AnimationCatalog.Load(_assetRoot);
-        _catalog.Preload("idle_m8", "hover_m8", "drag_hold", "drop", "pat_head_m8", "face_reaction_m8", "tap_annoyed", "hand_invite_m8", "study_guard_m8", "talking");
+        _catalog.Preload("idle_m8", "hover_m8", "drag_start", "drag_hold", "drop", "pat_head_m8", "face_reaction_m8", "tap_annoyed", "hand_invite_m8", "study_guard_m8", "talking");
         _hitTest = new HitTestService(_catalog.HitRegions);
         _dialogue = DialogueSelector.Load(System.IO.Path.Combine(_assetRoot, "dialogue", "blue-girl.zh-CN.json"));
         _propLayer = new PropLayerService(PropLayer, _assetRoot);
@@ -234,6 +234,12 @@ public partial class PetWindow : Window
         }
 
         var duration = Math.Max(350, _activeAnimation.DurationMs);
+        if (_dragging && _currentAnimationId == "drag_start" && (DateTimeOffset.Now - _animationStartedAt).TotalMilliseconds >= duration)
+        {
+            PlayAnimation("drag_hold", returnToIdle: false);
+            return;
+        }
+
         if (_returnToIdleAfterOneShot && (DateTimeOffset.Now - _animationStartedAt).TotalMilliseconds >= duration)
         {
             PlayAnimation("idle_m8", returnToIdle: false);
@@ -270,7 +276,7 @@ public partial class PetWindow : Window
             {
                 _dragging = true;
                 _lastDragScreenPoint = currentScreen;
-                PlayAnimation("drag_hold", returnToIdle: false);
+                PlayAnimation("drag_start", returnToIdle: false);
                 ShowBubble(_dialogue.Pick("drag.start"), seconds: 2);
             }
 
