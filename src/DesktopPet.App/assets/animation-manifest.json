@@ -2,7 +2,7 @@
   "schema": 2,
   "characterId": "blue_girl_m1",
   "defaultAnimation": "idle_m8",
-  "assetBaseline": "rig_prototype_v3_sheets",
+  "assetBaseline": "rig_prototype_v4_side_hair",
   "hitRegions": [
     {
       "id": "face",

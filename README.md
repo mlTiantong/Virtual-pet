@@ -5,7 +5,7 @@
 当前美术资源处于 AI 骨骼实验模式：
 
 - `assets/reference/参考图.png` 是唯一保留的人物基础参考图。
-- `scripts/prototype-rig-actions.py` 会从参考图抠绿底，并用轻量分层、pivot 和局部弹性形变生成实验动作帧。
+- `scripts/prototype-rig-actions.py` 会从参考图抠绿底，并用上身/下身/侧发轻量分层、pivot 和局部弹性形变生成实验动作帧。
 - `assets/runtime/sheets/` 保存当前生成的待机、悬停、拖拽、落地、摸头、点击反应、手部互动、学习、聊天、投喂和换装开心等透明 PNG spritesheet。
 - `assets/animation-manifest.json` 由生成脚本同步写入，同时保留 `reference_pose` 指向原始参考图。
 - `assets/motion-sequence.m8.json` 和 `assets/prop-manifest.m8.json` 保留为空壳，避免旧投喂道具引用。
@@ -109,7 +109,7 @@ artifacts\rig-prototype\rig_quality_report.json
 
 ## 当前限制
 
-- 当前实验动作是脚本生成的分层/骨骼近似效果，不是最终逐帧精修美术。
+- 当前实验动作是脚本生成的分层/骨骼近似效果，已包含自动侧发层，但不是最终逐帧精修美术。
 - 投喂道具、预览图、SpriteSheet 和服装/装饰图片均已移除，后续需要重新统一制作。
 - WPF 运行需要 Windows + .NET 8 SDK。
 

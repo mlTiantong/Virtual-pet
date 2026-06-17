@@ -53,6 +53,17 @@ class RigFrame:
     upper_pull_y: float = 0
     upper_pull_focus_y: float = 0.22
     upper_pull_radius: float = 0.55
+    hair_dx: float = 0
+    hair_dy: float = 0
+    hair_sx: float = 1
+    hair_sy: float = 1
+    hair_angle: float = 0
+    hair_wave: float = 0
+    hair_wave_phase: float = 0
+    hair_pull_x: float = 0
+    hair_pull_y: float = 0
+    hair_pull_focus_y: float = 0.58
+    hair_pull_radius: float = 0.82
 
 
 @dataclass(frozen=True)
@@ -108,27 +119,41 @@ def fit_to_canvas(character: Image.Image) -> tuple[Image.Image, tuple[int, int, 
     return canvas, fitted_bbox
 
 
-def make_layers(character: Image.Image, bbox: tuple[int, int, int, int]) -> tuple[Image.Image, Image.Image]:
+def make_layers(character: Image.Image, bbox: tuple[int, int, int, int]) -> tuple[Image.Image, Image.Image, Image.Image]:
     x0, y0, x1, y1 = bbox
+    width = x1 - x0
     height = y1 - y0
     cut_start = y0 + height * 0.50
     cut_end = y0 + height * 0.68
 
     y = np.arange(CANVAS_SIZE, dtype=np.float32)[:, None]
+    x = np.arange(CANVAS_SIZE, dtype=np.float32)[None, :]
     upper_weight = np.clip((cut_end - y) / (cut_end - cut_start), 0, 1)
+
+    x_center = x0 + width * 0.5
+    x_norm_from_center = np.abs(x - x_center) / max(1.0, width * 0.5)
+    y_norm = (y - y0) / max(1.0, height)
+    side_gate = np.clip((x_norm_from_center - 0.48) / 0.20, 0, 1)
+    vertical_gate = np.clip((y_norm - 0.18) / 0.18, 0, 1) * np.clip((0.90 - y_norm) / 0.16, 0, 1)
+    hair_weight = np.where(side_gate * vertical_gate > 0.28, 1.0, 0.0)
 
     arr = np.array(character).astype(np.float32)
     alpha = arr[..., 3] / 255.0
-    upper_alpha = alpha * upper_weight
-    lower_alpha = alpha * (1.0 - upper_weight)
+    hair_alpha = alpha * hair_weight
+    body_alpha = alpha * (1.0 - hair_weight)
+    upper_alpha = body_alpha * upper_weight
+    lower_alpha = body_alpha * (1.0 - upper_weight)
 
     upper = arr.copy()
     lower = arr.copy()
+    hair = arr.copy()
     upper[..., 3] = upper_alpha * 255
     lower[..., 3] = lower_alpha * 255
+    hair[..., 3] = hair_alpha * 255
     return (
         Image.fromarray(np.clip(lower, 0, 255).astype(np.uint8), "RGBA"),
         Image.fromarray(np.clip(upper, 0, 255).astype(np.uint8), "RGBA"),
+        Image.fromarray(np.clip(hair, 0, 255).astype(np.uint8), "RGBA"),
     )
 
 
@@ -250,11 +275,31 @@ def wave_layer_horizontal(layer: Image.Image, amplitude: float, phase: float, po
 def render_frame(
     lower: Image.Image,
     upper: Image.Image,
+    hair: Image.Image,
     frame: RigFrame,
     root_pivot: tuple[float, float],
     neck_pivot: tuple[float, float],
 ) -> Image.Image:
     canvas = Image.new("RGBA", (CANVAS_SIZE, CANVAS_SIZE), (0, 0, 0, 0))
+    hair_wave = frame.hair_wave + max(abs(frame.upper_wave), abs(frame.lower_wave)) * 0.85
+    hair_wave_phase = frame.hair_wave_phase if abs(frame.hair_wave_phase) > 0.01 else frame.upper_wave_phase + 0.85
+    hair_layer = transform_layer(
+        hair,
+        sx=frame.hair_sx * (1.0 + (frame.upper_sx - 1.0) * 0.35 + (frame.lower_sx - 1.0) * 0.15),
+        sy=frame.hair_sy * (1.0 + (frame.upper_sy - 1.0) * 0.35 + (frame.lower_sy - 1.0) * 0.15),
+        angle=frame.hair_angle + frame.upper_angle * 1.15 + frame.lower_angle * 0.45,
+        center=neck_pivot,
+        dx=frame.hair_dx + frame.upper_dx * 0.35 + frame.lower_dx * 0.25,
+        dy=frame.hair_dy + frame.upper_dy * 0.45 + frame.lower_dy * 0.35,
+    )
+    hair_layer = elastic_pull_layer(
+        hair_layer,
+        frame.hair_pull_x + frame.upper_pull_x * 0.65 + frame.lower_pull_x * 0.25,
+        frame.hair_pull_y + frame.upper_pull_y * 0.50 + frame.lower_pull_y * 0.20,
+        frame.hair_pull_focus_y,
+        frame.hair_pull_radius,
+    )
+    hair_layer = wave_layer_horizontal(hair_layer, hair_wave, hair_wave_phase, power=0.92)
     lower_layer = transform_layer(
         lower,
         sx=frame.lower_sx,
@@ -289,6 +334,7 @@ def render_frame(
         frame.upper_pull_radius,
     )
     upper_layer = wave_layer_horizontal(upper_layer, frame.upper_wave, frame.upper_wave_phase, power=1.45)
+    canvas.alpha_composite(hair_layer)
     canvas.alpha_composite(lower_layer)
     canvas.alpha_composite(upper_layer)
     return canvas
@@ -311,6 +357,8 @@ def idle_frames(count: int) -> list[RigFrame]:
                 upper_angle=1.0 * sway,
                 upper_wave=2.8,
                 upper_wave_phase=phase + 1.1,
+                hair_wave=1.4,
+                hair_wave_phase=phase + 1.7,
             )
         )
     return frames
@@ -333,6 +381,9 @@ def hover_frames(count: int) -> list[RigFrame]:
                 upper_angle=2.1 * math.sin(phase + 0.9),
                 upper_wave=4.6,
                 upper_wave_phase=phase + 1.8,
+                hair_angle=1.0 * math.sin(phase + 1.7),
+                hair_wave=2.4,
+                hair_wave_phase=phase + 2.6,
             )
         )
     return frames
@@ -356,6 +407,9 @@ def drag_hold_frames(count: int) -> list[RigFrame]:
                 upper_angle=2.2 * lag,
                 upper_wave=8.0,
                 upper_wave_phase=phase + 3.1,
+                hair_angle=3.8 * math.sin(phase - 1.0),
+                hair_wave=5.4,
+                hair_wave_phase=phase + 3.8,
             )
         )
     return frames
@@ -393,6 +447,9 @@ def drop_frames() -> list[RigFrame]:
                 upper_angle=1.4 * math.sin(settle * math.tau),
                 upper_wave=5.6 * impact,
                 upper_wave_phase=settle * math.tau + 2.2,
+                hair_angle=2.8 * impact * math.sin(settle * math.tau + 0.8),
+                hair_wave=4.2 * impact,
+                hair_wave_phase=settle * math.tau + 3.0,
             )
         )
     return frames
@@ -417,6 +474,9 @@ def pat_head_frames(count: int) -> list[RigFrame]:
                 upper_pull_radius=0.42,
                 upper_wave=5.0 * press,
                 upper_wave_phase=t * math.tau + 0.9,
+                hair_dy=3.0 * press,
+                hair_wave=3.0 * press,
+                hair_wave_phase=t * math.tau + 1.8,
             )
         )
     return frames
@@ -487,6 +547,9 @@ def hand_invite_frames(count: int) -> list[RigFrame]:
                 upper_pull_radius=0.42,
                 upper_wave=4.8,
                 upper_wave_phase=phase + 2.0,
+                hair_angle=2.0 * math.sin(phase * 2.0 - 0.8),
+                hair_wave=3.0,
+                hair_wave_phase=phase + 2.9,
             )
         )
     return frames
@@ -550,6 +613,8 @@ def feed_snack_frames(count: int) -> list[RigFrame]:
                 upper_angle=1.6 * math.sin(math.tau * t),
                 upper_wave=4.0 * settle,
                 upper_wave_phase=t * math.tau + 2.0,
+                hair_wave=2.6 * settle,
+                hair_wave_phase=t * math.tau + 2.8,
             )
         )
     return frames
@@ -572,6 +637,9 @@ def feed_meal_frames(count: int) -> list[RigFrame]:
                 upper_angle=1.2 * settle,
                 upper_wave=2.8 * nod,
                 upper_wave_phase=t * math.tau + 1.7,
+                hair_dy=2.0 * nod,
+                hair_wave=2.2 * nod,
+                hair_wave_phase=t * math.tau + 2.4,
             )
         )
     return frames
@@ -618,6 +686,9 @@ def idle_cheer_frames(count: int) -> list[RigFrame]:
                 upper_pull_focus_y=0.36,
                 upper_wave=6.0 * hop,
                 upper_wave_phase=t * math.tau + 1.4,
+                hair_angle=3.6 * side * hop,
+                hair_wave=5.2 * hop,
+                hair_wave_phase=t * math.tau + 2.3,
             )
         )
     return frames
@@ -653,13 +724,14 @@ def save_sequence(
     specs: list[RigFrame],
     lower: Image.Image,
     upper: Image.Image,
+    hair: Image.Image,
     root_pivot: tuple[float, float],
     neck_pivot: tuple[float, float],
 ) -> list[Image.Image]:
     SHEET_ROOT.mkdir(parents=True, exist_ok=True)
     frames: list[Image.Image] = []
     for spec in specs:
-        frame = render_frame(lower, upper, spec, root_pivot, neck_pivot)
+        frame = render_frame(lower, upper, hair, spec, root_pivot, neck_pivot)
         frames.append(frame)
 
     columns, rows = sheet_layout(len(frames))
@@ -711,7 +783,7 @@ def write_manifest(defs: list[SequenceDef]) -> None:
         "schema": 2,
         "characterId": "blue_girl_m1",
         "defaultAnimation": "idle_m8",
-        "assetBaseline": "rig_prototype_v3_sheets",
+        "assetBaseline": "rig_prototype_v4_side_hair",
         "hitRegions": HIT_REGIONS,
         "animations": animations,
     }
@@ -737,6 +809,7 @@ def save_rig_diagnostics(
     character: Image.Image,
     lower: Image.Image,
     upper: Image.Image,
+    hair: Image.Image,
     bbox: tuple[int, int, int, int],
     root_pivot: tuple[float, float],
     neck_pivot: tuple[float, float],
@@ -757,6 +830,7 @@ def save_rig_diagnostics(
         preview_tile(reference.convert("RGBA"), "reference"),
         preview_tile(character, "keyed fit"),
         preview_tile(upper, "upper layer"),
+        preview_tile(hair, "side hair layer"),
         preview_tile(lower, "lower layer"),
         preview_tile(overlay, "rig pivots"),
     ]
@@ -875,7 +949,7 @@ def main() -> None:
     reference = Image.open(REFERENCE)
     keyed = chroma_key_green(reference)
     character, bbox = fit_to_canvas(keyed)
-    lower, upper = make_layers(character, bbox)
+    lower, upper, hair = make_layers(character, bbox)
 
     x0, y0, x1, y1 = bbox
     w, h = x1 - x0, y1 - y0
@@ -884,11 +958,11 @@ def main() -> None:
 
     defs = sequence_defs()
     sequences = {
-        spec.id: save_sequence(spec.id, spec.frames, lower, upper, root_pivot, neck_pivot)
+        spec.id: save_sequence(spec.id, spec.frames, lower, upper, hair, root_pivot, neck_pivot)
         for spec in defs
     }
     write_manifest(defs)
-    save_rig_diagnostics(reference, character, lower, upper, bbox, root_pivot, neck_pivot)
+    save_rig_diagnostics(reference, character, lower, upper, hair, bbox, root_pivot, neck_pivot)
     save_contact_sheet(sequences)
     save_quality_report(sequences)
 
