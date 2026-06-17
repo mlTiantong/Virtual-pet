@@ -78,14 +78,14 @@
     "drag_start": {
       "id": "drag_start",
       "type": "spritesheet",
-      "fps": 14,
+      "fps": 24,
       "loop": false,
-      "durationMs": 560,
+      "durationMs": 180,
       "returnToIdle": false,
       "sheet": "runtime/sheets/drag_start.png",
       "columns": 4,
-      "rows": 2,
-      "frameCount": 8,
+      "rows": 1,
+      "frameCount": 4,
       "frameWidth": 768,
       "frameHeight": 768,
       "frames": []

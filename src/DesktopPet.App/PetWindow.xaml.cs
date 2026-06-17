@@ -37,6 +37,7 @@ public partial class PetWindow : Window
     private readonly DispatcherTimer _hideBubbleTimer = new();
     private readonly DispatcherTimer _hideHudTimer = new();
     private readonly DispatcherTimer _studyTimer = new();
+    private readonly DispatcherTimer _dragHoldSwitchTimer = new();
 
     private AnimationSpec? _activeAnimation;
     private int _frameIndex;
@@ -48,6 +49,7 @@ public partial class PetWindow : Window
     private CancellationTokenSource? _crossfadeCts;
     private const double CrossfadeDurationMs = 150;
     private const double CrossfadeStepMs = 15;
+    private const int DragStartToHoldDelayMs = 160;
     private PropLayerService? _propLayer;
     private MotionSequenceService? _motionSeq;
 
@@ -90,11 +92,13 @@ public partial class PetWindow : Window
         _hideBubbleTimer.Tick += (_, _) => HideBubbleIfNotPinned();
         _hideHudTimer.Tick += (_, _) => HudPanel.Visibility = Visibility.Collapsed;
         _studyTimer.Tick += StudyTimer_Tick;
+        _dragHoldSwitchTimer.Tick += DragHoldSwitchTimer_Tick;
 
         _idleTimer.Interval = TimeSpan.FromSeconds(8);
         _hideBubbleTimer.Interval = TimeSpan.FromSeconds(4);
         _hideHudTimer.Interval = TimeSpan.FromMilliseconds(650);
         _studyTimer.Interval = TimeSpan.FromSeconds(1);
+        _dragHoldSwitchTimer.Interval = TimeSpan.FromMilliseconds(DragStartToHoldDelayMs);
     }
 
     private void PetWindow_Loaded(object sender, RoutedEventArgs e)
@@ -125,6 +129,7 @@ public partial class PetWindow : Window
         SaveAll();
         _crossfadeCts?.Cancel();
         _motionSeq?.Cancel();
+        _dragHoldSwitchTimer.Stop();
         _propLayer?.HideAllProps();
         if (_notifyIcon is not null)
         {
@@ -182,9 +187,27 @@ public partial class PetWindow : Window
         var firstFrame = _catalog.LoadFrame(_activeAnimation, 0);
         _currentBitmap = firstFrame;
 
+        if (UsesInstantAnimationSwitch(id))
+        {
+            PetSprite.Source = firstFrame;
+            StartFrameTimer();
+            return;
+        }
+
         _crossfadeCts = new CancellationTokenSource();
         var token = _crossfadeCts.Token;
         _ = CrossfadeAndStartAsync(firstFrame, token);
+    }
+
+    private static bool UsesInstantAnimationSwitch(string id) =>
+        id is "drag_start" or "drag_hold" or "drop";
+
+    private void StartFrameTimer()
+    {
+        if (_activeAnimation is null) return;
+        var fps = Math.Max(1, _activeAnimation.Fps);
+        _frameTimer.Interval = TimeSpan.FromMilliseconds(1000.0 / fps);
+        _frameTimer.Start();
     }
 
     private async Task CrossfadeAndStartAsync(BitmapSource newFrame, CancellationToken token)
@@ -207,12 +230,7 @@ public partial class PetWindow : Window
         PetSprite.Opacity = 1;
         PetSpriteOverlay.Visibility = Visibility.Collapsed;
 
-        if (_activeAnimation is not null)
-        {
-            var fps = Math.Max(1, _activeAnimation.Fps);
-            _frameTimer.Interval = TimeSpan.FromMilliseconds(1000.0 / fps);
-            _frameTimer.Start();
-        }
+        StartFrameTimer();
     }
 
     private void FrameTimer_Tick(object? sender, EventArgs e)
@@ -233,7 +251,9 @@ public partial class PetWindow : Window
             return;
         }
 
-        var duration = Math.Max(350, _activeAnimation.DurationMs);
+        var duration = _currentAnimationId == "drag_start"
+            ? Math.Max(1, _activeAnimation.DurationMs)
+            : Math.Max(350, _activeAnimation.DurationMs);
         if (_dragging && _currentAnimationId == "drag_start" && (DateTimeOffset.Now - _animationStartedAt).TotalMilliseconds >= duration)
         {
             PlayAnimation("drag_hold", returnToIdle: false);
@@ -277,6 +297,7 @@ public partial class PetWindow : Window
                 _dragging = true;
                 _lastDragScreenPoint = currentScreen;
                 PlayAnimation("drag_start", returnToIdle: false);
+                StartDragHoldSwitchTimer();
                 ShowBubble(_dialogue.Pick("drag.start"), seconds: 2);
             }
 
@@ -322,6 +343,7 @@ public partial class PetWindow : Window
         if (_dragging)
         {
             _dragging = false;
+            _dragHoldSwitchTimer.Stop();
             PlayAnimation("drop");
             ShowBubble(_dialogue.Pick("drag.drop"), seconds: 3);
             _state.Energy = Math.Max(0, _state.Energy - 1);
@@ -332,6 +354,22 @@ public partial class PetWindow : Window
 
         HandleTap(_pressedRegion);
         e.Handled = true;
+    }
+
+    private void StartDragHoldSwitchTimer()
+    {
+        _dragHoldSwitchTimer.Stop();
+        _dragHoldSwitchTimer.Interval = TimeSpan.FromMilliseconds(DragStartToHoldDelayMs);
+        _dragHoldSwitchTimer.Start();
+    }
+
+    private void DragHoldSwitchTimer_Tick(object? sender, EventArgs e)
+    {
+        _dragHoldSwitchTimer.Stop();
+        if (_pressed && _dragging && _currentAnimationId == "drag_start")
+        {
+            PlayAnimation("drag_hold", returnToIdle: false);
+        }
     }
 
     private PetHitRegion HitTestPet(MouseEventArgs e)

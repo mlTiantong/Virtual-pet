@@ -802,7 +802,7 @@ def sequence_defs() -> list[SequenceDef]:
     return [
         SequenceDef("idle_m8", idle_frames(16), fps=8, loop=True, duration_ms=0, return_to_idle=False),
         SequenceDef("hover_m8", hover_frames(12), fps=10, loop=False, duration_ms=1200),
-        SequenceDef("drag_start", drag_start_frames(8), fps=14, loop=False, duration_ms=560, return_to_idle=False),
+        SequenceDef("drag_start", drag_start_frames(4), fps=24, loop=False, duration_ms=180, return_to_idle=False),
         SequenceDef("drag_hold", drag_hold_frames(12), fps=10, loop=True, duration_ms=0, return_to_idle=False),
         SequenceDef("drop", drop_frames(), fps=12, loop=False, duration_ms=1000),
         SequenceDef("pat_head_m8", pat_head_frames(8), fps=12, loop=False, duration_ms=700),
