@@ -12,6 +12,8 @@ if (!(Test-Path $manifestPath)) { throw "Missing animation-manifest.json" }
 $manifest = Get-Content $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
 $missing = New-Object System.Collections.Generic.List[string]
 $usedImages = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+$definedAnimations = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+$codeAnimationRefs = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
 
 Add-Type -AssemblyName System.Drawing
 
@@ -62,6 +64,23 @@ function Add-AssetReference {
     if (!(Test-Path $path)) {
         $missing.Add("$Context -> $RelativePath")
     }
+}
+
+function Add-CodeAnimationReference {
+    param(
+        [string]$Context,
+        [string]$AnimationId
+    )
+
+    if ([string]::IsNullOrWhiteSpace($AnimationId)) { return }
+    [void]$codeAnimationRefs.Add($AnimationId)
+    if (-not $definedAnimations.Contains($AnimationId)) {
+        $missing.Add("$Context unknown animation -> $AnimationId")
+    }
+}
+
+foreach ($prop in $manifest.animations.PSObject.Properties) {
+    [void]$definedAnimations.Add($prop.Name)
 }
 
 if (-not $manifest.animations.PSObject.Properties[$manifest.defaultAnimation]) {
@@ -121,6 +140,33 @@ if (Test-Path $xamlPath) {
     $matches = [regex]::Matches($xaml, 'Source="assets/([^"]+\.(png|jpg|jpeg|webp|gif|bmp))"', "IgnoreCase")
     foreach ($match in $matches) {
         Add-AssetReference "xaml image" $match.Groups[1].Value
+    }
+}
+
+$sourceRoot = Join-Path $projectRoot "src\DesktopPet.App"
+$sourceFiles = Get-ChildItem $sourceRoot -Recurse -File -Filter *.cs
+foreach ($file in $sourceFiles) {
+    $relativeSource = $file.FullName.Substring($projectRoot.Length).TrimStart(
+        [System.IO.Path]::DirectorySeparatorChar,
+        [System.IO.Path]::AltDirectorySeparatorChar)
+    $source = Get-Content $file.FullName -Raw -Encoding UTF8
+
+    foreach ($match in [regex]::Matches($source, '(?i)\bplayAnimation\s*\(\s*"([^"]+)"')) {
+        Add-CodeAnimationReference "$relativeSource PlayAnimation" $match.Groups[1].Value
+    }
+
+    foreach ($match in [regex]::Matches($source, 'new\s+PetAction\s*\(\s*"([^"]+)"')) {
+        Add-CodeAnimationReference "$relativeSource PetAction" $match.Groups[1].Value
+    }
+
+    foreach ($match in [regex]::Matches($source, '=>\s*new\s*\(\s*"([^"]+)"')) {
+        Add-CodeAnimationReference "$relativeSource PetAction" $match.Groups[1].Value
+    }
+
+    foreach ($preload in [regex]::Matches($source, '(?s)\.Preload\s*\((.*?)\);')) {
+        foreach ($match in [regex]::Matches($preload.Groups[1].Value, '"([^"]+)"')) {
+            Add-CodeAnimationReference "$relativeSource Preload" $match.Groups[1].Value
+        }
     }
 }
 
@@ -196,5 +242,6 @@ if ($missing.Count -gt 0) {
 Write-Host "Asset validation passed." -ForegroundColor Green
 Write-Host "Animation count: $(@($manifest.animations.PSObject.Properties).Count)"
 Write-Host "Image references: $($usedImages.Count)"
+Write-Host "Code animation references: $($codeAnimationRefs.Count)"
 Write-Host "Motion sequences: $seqCount"
 Write-Host "Props defined: $($definedProps.Count)"
