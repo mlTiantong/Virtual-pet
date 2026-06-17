@@ -13,6 +13,23 @@ $manifest = Get-Content $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
 $missing = New-Object System.Collections.Generic.List[string]
 $usedImages = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
 
+Add-Type -AssemblyName System.Drawing
+
+function Get-ImageSize {
+    param([string]$FullPath)
+
+    $image = [System.Drawing.Image]::FromFile($FullPath)
+    try {
+        return [PSCustomObject]@{
+            Width = $image.Width
+            Height = $image.Height
+        }
+    }
+    finally {
+        $image.Dispose()
+    }
+}
+
 function Get-AssetRelativePath {
     param([string]$FullPath)
 
@@ -58,7 +75,43 @@ foreach ($prop in $manifest.animations.PSObject.Properties) {
         Add-AssetReference "animation-manifest.sheet: $animationId" $spec.sheet
     }
 
-    foreach ($frame in $spec.frames) {
+    $frameRefs = @($spec.frames)
+    if (-not $spec.sheet -and $frameRefs.Count -eq 0) {
+        $missing.Add("animation-manifest: $animationId has neither sheet nor frames")
+    }
+
+    $isSpriteSheet = $spec.sheet -or [string]::Equals([string]$spec.type, "spritesheet", [System.StringComparison]::OrdinalIgnoreCase)
+    if ($isSpriteSheet) {
+        $columns = [int]$spec.columns
+        $rows = [int]$spec.rows
+        $frameCount = [int]$spec.frameCount
+        $frameWidth = [int]$spec.frameWidth
+        $frameHeight = [int]$spec.frameHeight
+
+        if (-not $spec.sheet) { $missing.Add("animation-manifest.spritesheet: $animationId missing sheet") }
+        if ($columns -le 0) { $missing.Add("animation-manifest.spritesheet: $animationId invalid columns") }
+        if ($rows -le 0) { $missing.Add("animation-manifest.spritesheet: $animationId invalid rows") }
+        if ($frameCount -le 0) { $missing.Add("animation-manifest.spritesheet: $animationId invalid frameCount") }
+        if ($frameWidth -le 0) { $missing.Add("animation-manifest.spritesheet: $animationId invalid frameWidth") }
+        if ($frameHeight -le 0) { $missing.Add("animation-manifest.spritesheet: $animationId invalid frameHeight") }
+        if ($columns -gt 0 -and $rows -gt 0 -and $frameCount -gt ($columns * $rows)) {
+            $missing.Add("animation-manifest.spritesheet: $animationId frameCount exceeds grid")
+        }
+
+        if ($spec.sheet) {
+            $sheetPath = Join-Path $assetRoot ([string]$spec.sheet).Replace("/", [System.IO.Path]::DirectorySeparatorChar)
+            if (Test-Path $sheetPath) {
+                $size = Get-ImageSize $sheetPath
+                $expectedWidth = $columns * $frameWidth
+                $expectedHeight = $rows * $frameHeight
+                if ($expectedWidth -gt 0 -and $expectedHeight -gt 0 -and ($size.Width -ne $expectedWidth -or $size.Height -ne $expectedHeight)) {
+                    $missing.Add("animation-manifest.spritesheet: $animationId sheet size $($size.Width)x$($size.Height), expected ${expectedWidth}x${expectedHeight}")
+                }
+            }
+        }
+    }
+
+    foreach ($frame in $frameRefs) {
         Add-AssetReference "animation-manifest.frame: $animationId" $frame
     }
 }

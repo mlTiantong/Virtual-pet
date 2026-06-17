@@ -13,7 +13,8 @@ from PIL import Image, ImageDraw, ImageFilter
 ROOT = Path(__file__).resolve().parents[1]
 ASSET_ROOT = ROOT / "src" / "DesktopPet.App" / "assets"
 REFERENCE = ASSET_ROOT / "reference" / "参考图.png"
-OUT_ROOT = ASSET_ROOT / "runtime" / "animations"
+RUNTIME_ROOT = ASSET_ROOT / "runtime"
+SHEET_ROOT = RUNTIME_ROOT / "sheets"
 ARTIFACT_ROOT = ROOT / "artifacts" / "rig-prototype"
 
 CANVAS_SIZE = 768
@@ -641,6 +642,12 @@ def sequence_defs() -> list[SequenceDef]:
     ]
 
 
+def sheet_layout(count: int) -> tuple[int, int]:
+    columns = min(4, max(1, count))
+    rows = math.ceil(count / columns)
+    return columns, rows
+
+
 def save_sequence(
     name: str,
     specs: list[RigFrame],
@@ -649,18 +656,24 @@ def save_sequence(
     root_pivot: tuple[float, float],
     neck_pivot: tuple[float, float],
 ) -> list[Image.Image]:
-    out_dir = OUT_ROOT / name
-    out_dir.mkdir(parents=True, exist_ok=True)
+    SHEET_ROOT.mkdir(parents=True, exist_ok=True)
     frames: list[Image.Image] = []
-    for idx, spec in enumerate(specs):
+    for spec in specs:
         frame = render_frame(lower, upper, spec, root_pivot, neck_pivot)
-        frame.save(out_dir / f"{idx:03d}.png", optimize=True, compress_level=9)
         frames.append(frame)
+
+    columns, rows = sheet_layout(len(frames))
+    sheet = Image.new("RGBA", (columns * CANVAS_SIZE, rows * CANVAS_SIZE), (0, 0, 0, 0))
+    for idx, frame in enumerate(frames):
+        x = (idx % columns) * CANVAS_SIZE
+        y = (idx // columns) * CANVAS_SIZE
+        sheet.alpha_composite(frame, (x, y))
+    sheet.save(SHEET_ROOT / f"{name}.png", optimize=True, compress_level=9)
     return frames
 
 
-def frame_paths(name: str, count: int) -> list[str]:
-    return [f"runtime/animations/{name}/{idx:03d}.png" for idx in range(count)]
+def sheet_path(name: str) -> str:
+    return f"runtime/sheets/{name}.png"
 
 
 def write_manifest(defs: list[SequenceDef]) -> None:
@@ -677,21 +690,28 @@ def write_manifest(defs: list[SequenceDef]) -> None:
     }
 
     for spec in defs:
+        columns, rows = sheet_layout(len(spec.frames))
         animations[spec.id] = {
             "id": spec.id,
-            "type": "frames",
+            "type": "spritesheet",
             "fps": spec.fps,
             "loop": spec.loop,
             "durationMs": spec.duration_ms,
             "returnToIdle": spec.return_to_idle,
-            "frames": frame_paths(spec.id, len(spec.frames)),
+            "sheet": sheet_path(spec.id),
+            "columns": columns,
+            "rows": rows,
+            "frameCount": len(spec.frames),
+            "frameWidth": CANVAS_SIZE,
+            "frameHeight": CANVAS_SIZE,
+            "frames": [],
         }
 
     manifest = {
         "schema": 2,
         "characterId": "blue_girl_m1",
         "defaultAnimation": "idle_m8",
-        "assetBaseline": "rig_prototype_v2",
+        "assetBaseline": "rig_prototype_v3_sheets",
         "hitRegions": HIT_REGIONS,
         "animations": animations,
     }
@@ -780,13 +800,77 @@ def save_contact_sheet(sequences: dict[str, list[Image.Image]]) -> None:
     sheet.convert("RGB").save(ARTIFACT_ROOT / "rig_prototype_contact_sheet.png")
 
 
+def alpha_bbox(alpha: np.ndarray) -> list[int] | None:
+    ys, xs = np.where(alpha > 8)
+    if len(xs) == 0 or len(ys) == 0:
+        return None
+    return [int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1]
+
+
+def save_quality_report(sequences: dict[str, list[Image.Image]]) -> None:
+    ARTIFACT_ROOT.mkdir(parents=True, exist_ok=True)
+    report: dict[str, object] = {
+        "frameWidth": CANVAS_SIZE,
+        "frameHeight": CANVAS_SIZE,
+        "sequenceCount": len(sequences),
+        "frameCountTotal": sum(len(frames) for frames in sequences.values()),
+        "sequences": {},
+    }
+    sequence_reports: dict[str, object] = {}
+
+    for name, frames in sequences.items():
+        first = np.array(frames[0]).astype(np.int16)
+        changed_pixels: list[int] = []
+        alpha_pixels: list[int] = []
+        corner_alpha_max = 0
+        bboxes: list[list[int] | None] = []
+
+        for frame in frames:
+            arr = np.array(frame).astype(np.int16)
+            diff = np.max(np.abs(arr - first), axis=2)
+            changed_pixels.append(int(np.count_nonzero(diff > 8)))
+
+            alpha = arr[..., 3]
+            alpha_pixels.append(int(np.count_nonzero(alpha > 8)))
+            corner_alpha_max = max(
+                corner_alpha_max,
+                int(alpha[0, 0]),
+                int(alpha[0, -1]),
+                int(alpha[-1, 0]),
+                int(alpha[-1, -1]),
+            )
+            bboxes.append(alpha_bbox(alpha))
+
+        columns, rows = sheet_layout(len(frames))
+        sheet_file = SHEET_ROOT / f"{name}.png"
+        sequence_reports[name] = {
+            "frames": len(frames),
+            "sheet": sheet_path(name),
+            "sheetPixels": [columns * CANVAS_SIZE, rows * CANVAS_SIZE],
+            "sheetBytes": sheet_file.stat().st_size if sheet_file.exists() else 0,
+            "avgChangedPixelsVsFirst": round(sum(changed_pixels) / len(changed_pixels)),
+            "maxChangedPixelsVsFirst": max(changed_pixels),
+            "alphaPixelsMin": min(alpha_pixels),
+            "alphaPixelsMax": max(alpha_pixels),
+            "cornerAlphaMax": corner_alpha_max,
+            "firstBBox": bboxes[0],
+            "lastBBox": bboxes[-1],
+        }
+
+    report["sequences"] = sequence_reports
+    (ARTIFACT_ROOT / "rig_quality_report.json").write_text(
+        json.dumps(report, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+
 def main() -> None:
     if not REFERENCE.exists():
         raise FileNotFoundError(REFERENCE)
 
-    if OUT_ROOT.exists():
-        shutil.rmtree(OUT_ROOT)
-    OUT_ROOT.mkdir(parents=True, exist_ok=True)
+    if RUNTIME_ROOT.exists():
+        shutil.rmtree(RUNTIME_ROOT)
+    SHEET_ROOT.mkdir(parents=True, exist_ok=True)
 
     reference = Image.open(REFERENCE)
     keyed = chroma_key_green(reference)
@@ -806,10 +890,12 @@ def main() -> None:
     write_manifest(defs)
     save_rig_diagnostics(reference, character, lower, upper, bbox, root_pivot, neck_pivot)
     save_contact_sheet(sequences)
+    save_quality_report(sequences)
 
-    print(f"Generated {sum(len(frames) for frames in sequences.values())} frames under {OUT_ROOT}")
+    print(f"Generated {len(sequences)} sheets for {sum(len(frames) for frames in sequences.values())} frames under {SHEET_ROOT}")
     print(f"Manifest: {ASSET_ROOT / 'animation-manifest.json'}")
     print(f"Diagnostics: {ARTIFACT_ROOT / 'rig_diagnostics.png'}")
+    print(f"Quality: {ARTIFACT_ROOT / 'rig_quality_report.json'}")
     print(f"Preview: {ARTIFACT_ROOT / 'rig_prototype_contact_sheet.png'}")
 
 
