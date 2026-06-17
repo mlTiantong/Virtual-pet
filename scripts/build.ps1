@@ -1,0 +1,38 @@
+$ErrorActionPreference = "Stop"
+$project = Join-Path $PSScriptRoot "..\src\DesktopPet.App\DesktopPet.App.csproj"
+$out = Join-Path $PSScriptRoot "..\artifacts\publish\DesktopPet.App"
+dotnet publish $project -c Release -r win-x64 --self-contained false -o $out
+Write-Host "Published to $out"
+
+# SIG # Begin signature block
+# MIIFdgYJKoZIhvcNAQcCoIIFZzCCBWMCAQExCzAJBgUrDgMCGgUAMGkGCisGAQQB
+# gjcCAQSgWzBZMDQGCisGAQQBgjcCAR4wJgIDAQAABBAfzDtgWUsITrck0sYpfvNR
+# AgEAAgEAAgEAAgEAAgEAMCEwCQYFKw4DAhoFAAQUa6sG7uwuP7cL3CmupgmvYS1r
+# TM6gggMOMIIDCjCCAfKgAwIBAgIQevXj86fnvppEOdU15nAzJzANBgkqhkiG9w0B
+# AQsFADAdMRswGQYDVQQDDBJEZXNrdG9wUGV0IFNpZ25pbmcwHhcNMjYwNjEyMDYy
+# ODQ5WhcNMjcwNjEyMDY0ODQ5WjAdMRswGQYDVQQDDBJEZXNrdG9wUGV0IFNpZ25p
+# bmcwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCzRrBWQIdylTvjjnds
+# P70PCHcS7wnZMWBsd/gzS07EdNT7YsO+7/59ee3Z2NsUqqAFJnl3F0C8QuZXAB38
+# ToQD9HafNc9GlICc6OcMZHRIbiYoTpVYZeIkN+SpjGc6BVa8zK0yRU+BV66pQK/C
+# nZcOVYSrlmkjr791fIge6FxnxmP1LRiHvWkx2QRykn/LlpqpGtqwvmd60taDS15W
+# 25+QC/RzppqvM6B/LIYt2Fcw0zAKqGTI/pfXWArSYkccTp2ay6IMwDy6TnuxEJ+w
+# 6F3UiGPo6kd/Z21yfVwUgLgdz6wyW8AlIKmupHRYQQ+w+DVc7swne4vy7HyFfXf/
+# YD19AgMBAAGjRjBEMA4GA1UdDwEB/wQEAwIHgDATBgNVHSUEDDAKBggrBgEFBQcD
+# AzAdBgNVHQ4EFgQU9Rj3eeeNLCjQ1r+boIgG5/D3Z1QwDQYJKoZIhvcNAQELBQAD
+# ggEBABv3Uo91bIkGTOz+8cqD8y2AiBqmAxhxPiBOZyxPx8+MdvzzSzrU1Q6dNAZI
+# Ex6h1k3tD1NArNax6J4gPJzqLxbpEvBr124UsYoA5v7Wauv5WhO4au9nO4NOaQ/b
+# tHdw+BIjJXnhJ8rturV3ajU3iY3PYnk+Oa2yU6cDkoMe8kt9XwpVWpw/ub/wDD6n
+# 5fdaR1s7cspRkwnhZuwea6PuqCx3TzCd5W1pIyLjj3KUm+q44MwJxemUwrwxAGA3
+# AwtfpbT/CN4R9xCkFDv+3ZJ0xsAGg8tyVejhfhIFS7DVzzTgIiN/nnaAcPid64sg
+# awA2Gnai3L6+XptHgT7Ceg199SYxggHSMIIBzgIBATAxMB0xGzAZBgNVBAMMEkRl
+# c2t0b3BQZXQgU2lnbmluZwIQevXj86fnvppEOdU15nAzJzAJBgUrDgMCGgUAoHgw
+# GAYKKwYBBAGCNwIBDDEKMAigAoAAoQKAADAZBgkqhkiG9w0BCQMxDAYKKwYBBAGC
+# NwIBBDAcBgorBgEEAYI3AgELMQ4wDAYKKwYBBAGCNwIBFTAjBgkqhkiG9w0BCQQx
+# FgQUKocieeP8f6xS4y7+kguLhuf8wsUwDQYJKoZIhvcNAQEBBQAEggEAEV+zQa6j
+# 4iJobgRZCQzrvZm/v8x2rUns40NHycdvL18clrMmpibhlDA3in9r+LsNv9K1li5g
+# Nsr8EgV2W1qHCTNlLObVy48vecPMjwxpOCH1jF9m6091AtwR8CTY9iY7TbdgqjV5
+# jI8uiUNeftRcz+1zHyH1EreWev+sO2njCiJo5ecWuVn6jEus2zaZkkkR5x3QTNu0
+# fL2d3mZB0PXN1LBPaF21Q/jjZHvINtkDDap+8lg02Zz39Yx+QMAattkRAQdmLiUK
+# 923S4wml3q68oQVNHx87ribf5+Hik8d8xJPFAJKDe9AZ6zFFwEPFO6c0YAqV2m4V
+# dT9L1oWwVSIgsg==
+# SIG # End signature block

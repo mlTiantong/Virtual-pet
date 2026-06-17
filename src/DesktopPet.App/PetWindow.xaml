@@ -1,0 +1,284 @@
+<Window x:Class="DesktopPet.App.PetWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="DesktopPet M1" Width="760" Height="540"
+        WindowStyle="None" ResizeMode="NoResize" AllowsTransparency="True"
+        Background="Transparent" ShowInTaskbar="False" Topmost="True"
+        Loaded="PetWindow_Loaded"
+        SourceInitialized="PetWindow_SourceInitialized"
+        Closing="PetWindow_Closing">
+  <Canvas x:Name="RootCanvas" Background="Transparent">
+    <Canvas.Resources>
+      <DropShadowEffect x:Key="SoftShadow" BlurRadius="28" ShadowDepth="8" Opacity="0.25" Color="#1B314E" />
+      <Style x:Key="GlassButton" TargetType="Button">
+        <Setter Property="MinHeight" Value="36" />
+        <Setter Property="Margin" Value="0,4,0,4" />
+        <Setter Property="Padding" Value="14,6" />
+        <Setter Property="Foreground" Value="#F3F8FF" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Background" Value="#2BFFFFFF" />
+        <Setter Property="BorderBrush" Value="#44FFFFFF" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Template">
+          <Setter.Value>
+            <ControlTemplate TargetType="Button">
+              <Border Background="{TemplateBinding Background}"
+                      BorderBrush="{TemplateBinding BorderBrush}"
+                      BorderThickness="{TemplateBinding BorderThickness}"
+                      CornerRadius="12">
+                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+              </Border>
+              <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                  <Setter Property="Background" Value="#44FFFFFF" />
+                  <Setter Property="BorderBrush" Value="#77B9D6FF" />
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                  <Setter Property="Background" Value="#6687B8FF" />
+                </Trigger>
+              </ControlTemplate.Triggers>
+            </ControlTemplate>
+          </Setter.Value>
+        </Setter>
+      </Style>
+      <Style x:Key="RowButton" TargetType="Button" BasedOn="{StaticResource GlassButton}">
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="Height" Value="52" />
+        <Setter Property="Margin" Value="0,6,0,6" />
+      </Style>
+      <Style x:Key="PreviewButton" TargetType="Button" BasedOn="{StaticResource GlassButton}">
+        <Setter Property="Width" Value="80" />
+        <Setter Property="Height" Value="88" />
+        <Setter Property="Margin" Value="5,0" />
+        <Setter Property="Padding" Value="4" />
+      </Style>
+      <Style TargetType="TabControl">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+      </Style>
+      <Style TargetType="TabItem">
+        <Setter Property="Foreground" Value="#EAF3FF" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Padding" Value="14,8" />
+        <Setter Property="Template">
+          <Setter.Value>
+            <ControlTemplate TargetType="TabItem">
+              <Border x:Name="TabChrome" Padding="{TemplateBinding Padding}" CornerRadius="10" Background="Transparent">
+                <ContentPresenter ContentSource="Header" HorizontalAlignment="Center" />
+              </Border>
+              <ControlTemplate.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                  <Setter TargetName="TabChrome" Property="Background" Value="#6687B8FF" />
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                  <Setter TargetName="TabChrome" Property="Background" Value="#33FFFFFF" />
+                </Trigger>
+              </ControlTemplate.Triggers>
+            </ControlTemplate>
+          </Setter.Value>
+        </Setter>
+      </Style>
+    </Canvas.Resources>
+
+    <Image x:Name="PetSprite"
+           Width="370" Height="370"
+           Canvas.Left="26" Canvas.Top="122"
+           Stretch="Uniform"
+           RenderOptions.BitmapScalingMode="HighQuality"
+           SnapsToDevicePixels="True"
+           MouseEnter="PetSprite_MouseEnter"
+           MouseLeave="PetSprite_MouseLeave"
+           MouseMove="PetSprite_MouseMove"
+           MouseLeftButtonDown="PetSprite_MouseLeftButtonDown"
+           MouseLeftButtonUp="PetSprite_MouseLeftButtonUp" />
+
+    <Image x:Name="PetSpriteOverlay"
+           Width="370" Height="370"
+           Canvas.Left="26" Canvas.Top="122"
+           Stretch="Uniform"
+           RenderOptions.BitmapScalingMode="HighQuality"
+           SnapsToDevicePixels="True"
+           IsHitTestVisible="False"
+           Visibility="Collapsed" />
+
+    <Canvas x:Name="PropLayer"
+            Canvas.Left="0" Canvas.Top="0"
+            Width="760" Height="540"
+            IsHitTestVisible="False" />
+
+    <Border x:Name="BubbleBorder"
+            Canvas.Left="24" Canvas.Top="22"
+            MaxWidth="340"
+            Padding="14,9"
+            Background="#E8F7FBFF"
+            BorderBrush="#90BBD8FF"
+            BorderThickness="1"
+            CornerRadius="16"
+            Visibility="Collapsed"
+            MouseEnter="HudOrBubble_MouseEnter"
+            MouseLeave="HudOrBubble_MouseLeave">
+      <Border.Effect>
+        <DropShadowEffect BlurRadius="16" ShadowDepth="3" Opacity="0.18" />
+      </Border.Effect>
+      <TextBlock x:Name="BubbleText" TextWrapping="Wrap" Foreground="#375A7B" FontSize="14" />
+    </Border>
+
+    <Border x:Name="HudPanel"
+            Canvas.Left="398" Canvas.Top="46"
+            Width="340"
+            Padding="16"
+            Background="#B8304562"
+            BorderBrush="#78FFFFFF"
+            BorderThickness="1"
+            CornerRadius="24"
+            Visibility="Visible"
+            MouseEnter="HudOrBubble_MouseEnter"
+            MouseLeave="HudOrBubble_MouseLeave"
+            Effect="{StaticResource SoftShadow}">
+      <Grid>
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0" Margin="0,0,0,12">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="Auto" />
+          </Grid.ColumnDefinitions>
+          <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+            <TextBlock Text="🐾" FontSize="22" Margin="0,0,8,0" />
+            <TextBlock Text="蓝发桌宠 · M1" FontWeight="Bold" FontSize="18" Foreground="#F7FBFF" VerticalAlignment="Center" />
+          </StackPanel>
+          <Button Grid.Column="1" Style="{StaticResource GlassButton}" Width="34" Height="30" MinHeight="30" Margin="0,0,8,0" Padding="0" Content="–" Click="HudCloseButton_Click" />
+          <Button Grid.Column="2" Style="{StaticResource GlassButton}" Width="34" Height="30" MinHeight="30" Padding="0" Content="×" Click="HudCloseButton_Click" />
+        </Grid>
+
+        <TabControl x:Name="HudTabs" Grid.Row="1" SelectedIndex="4" Margin="0,0,0,12">
+          <TabItem Header="照料">
+            <StackPanel Margin="0,14,0,0">
+              <Button Style="{StaticResource GlassButton}" Content="摸头" Click="PatButton_Click" />
+              <UniformGrid Columns="3">
+                <Button Style="{StaticResource GlassButton}" Content="点心" Click="SnackButton_Click" Margin="0,4,4,4" />
+                <Button Style="{StaticResource GlassButton}" Content="正餐" Click="MealButton_Click" Margin="4" />
+                <Button Style="{StaticResource GlassButton}" Content="热茶" Click="TeaButton_Click" Margin="4,4,0,4" />
+              </UniformGrid>
+              <TextBox x:Name="ChatBox" Height="32" Margin="0,8,0,6" ToolTip="输入一句话" Background="#33FFFFFF" Foreground="#F7FBFF" BorderBrush="#55FFFFFF" />
+              <Button Style="{StaticResource GlassButton}" Content="气泡聊天" Click="ChatSendButton_Click" />
+            </StackPanel>
+          </TabItem>
+          <TabItem Header="学习">
+            <StackPanel Margin="0,14,0,0">
+              <UniformGrid Columns="3">
+                <Button Style="{StaticResource GlassButton}" Content="25" Click="Study25Button_Click" Margin="0,4,4,4" />
+                <Button Style="{StaticResource GlassButton}" Content="45" Click="Study45Button_Click" Margin="4" />
+                <Button Style="{StaticResource GlassButton}" Content="60" Click="Study60Button_Click" Margin="4,4,0,4" />
+              </UniformGrid>
+              <UniformGrid Columns="3">
+                <Button Style="{StaticResource GlassButton}" Content="暂停" Click="StudyPauseButton_Click" Margin="0,4,4,4" />
+                <Button Style="{StaticResource GlassButton}" Content="继续" Click="StudyResumeButton_Click" Margin="4" />
+                <Button Style="{StaticResource GlassButton}" Content="取消" Click="StudyCancelButton_Click" Margin="4,4,0,4" />
+              </UniformGrid>
+              <TextBlock x:Name="StudyStatusText" Margin="4,8,4,0" Foreground="#DDEBFF" TextWrapping="Wrap" />
+            </StackPanel>
+          </TabItem>
+          <TabItem Header="状态">
+            <Border Margin="0,14,0,0" Padding="12" Background="#22FFFFFF" CornerRadius="14" BorderBrush="#33FFFFFF" BorderThickness="1">
+              <TextBlock x:Name="StateStatusText" TextWrapping="Wrap" Foreground="#F1F7FF" LineHeight="22" />
+            </Border>
+          </TabItem>
+          <TabItem Header="个性化">
+            <StackPanel Margin="0,14,0,0">
+              <UniformGrid Columns="3">
+                <Button Style="{StaticResource GlassButton}" Content="daily" Click="OutfitDaily_Click" Margin="0,4,4,4" />
+                <Button Style="{StaticResource GlassButton}" Content="focus" Click="OutfitFocus_Click" Margin="4" />
+                <Button Style="{StaticResource GlassButton}" Content="rest" Click="OutfitRest_Click" Margin="4,4,0,4" />
+              </UniformGrid>
+              <UniformGrid Columns="2">
+                <Button Style="{StaticResource GlassButton}" Content="night" Click="OutfitNight_Click" Margin="0,4,4,4" />
+                <Button Style="{StaticResource GlassButton}" Content="festival" Click="OutfitFestival_Click" Margin="4,4,0,4" />
+              </UniformGrid>
+            </StackPanel>
+          </TabItem>
+          <TabItem Header="设置">
+            <StackPanel Margin="0,14,0,0">
+              <Button x:Name="TopmostButton" Style="{StaticResource RowButton}" Click="TopmostButton_Click">
+                <DockPanel LastChildFill="True">
+                  <TextBlock Text="📌" FontSize="22" Width="36" VerticalAlignment="Center" />
+                  <TextBlock Text="置顶：开" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center" />
+                  <TextBlock Text="●" Foreground="#8CB8FF" FontSize="28" DockPanel.Dock="Right" VerticalAlignment="Center" />
+                </DockPanel>
+              </Button>
+              <Button x:Name="ClickThroughButton" Style="{StaticResource RowButton}" Click="ClickThroughButton_Click">
+                <DockPanel LastChildFill="True">
+                  <TextBlock Text="➤" FontSize="22" Width="36" VerticalAlignment="Center" />
+                  <TextBlock Text="点击穿透：关" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center" />
+                  <TextBlock Text="●" Foreground="#DCE6F2" FontSize="28" DockPanel.Dock="Right" VerticalAlignment="Center" />
+                </DockPanel>
+              </Button>
+              <Button x:Name="SoundButton" Style="{StaticResource RowButton}" Click="SoundButton_Click">
+                <DockPanel LastChildFill="True">
+                  <TextBlock Text="🔊" FontSize="22" Width="36" VerticalAlignment="Center" />
+                  <TextBlock Text="声音：开" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center" />
+                  <TextBlock Text="●" Foreground="#8CB8FF" FontSize="28" DockPanel.Dock="Right" VerticalAlignment="Center" />
+                </DockPanel>
+              </Button>
+              <Button Style="{StaticResource RowButton}" Click="ReloadAssetsButton_Click">
+                <DockPanel LastChildFill="True">
+                  <TextBlock Text="⟳" FontSize="24" Width="36" VerticalAlignment="Center" />
+                  <TextBlock Text="重载资源" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center" />
+                  <TextBlock Text="›" FontSize="30" DockPanel.Dock="Right" VerticalAlignment="Center" />
+                </DockPanel>
+              </Button>
+
+              <Border Height="1" Background="#44FFFFFF" Margin="0,8,0,12" />
+              <StackPanel Orientation="Horizontal" Margin="2,0,0,2">
+                <TextBlock Text="✓" Foreground="#55E08F" FontSize="18" FontWeight="Bold" Margin="0,0,8,0" />
+                <TextBlock Text="已加载：" Foreground="#F2F8FF" FontWeight="SemiBold" FontSize="14" />
+                <TextBlock Text="新版美术资源包" Foreground="#7FB1FF" FontWeight="Bold" FontSize="14" />
+              </StackPanel>
+              <TextBlock Text="桌宠已使用 4×4 SpriteSheet 美术资源，动画首尾闭环。" Foreground="#C9D7EA" FontSize="12" Margin="28,0,0,12" TextWrapping="Wrap" />
+
+              <Border Background="#1CFFFFFF" CornerRadius="14" BorderBrush="#2EFFFFFF" BorderThickness="1" Padding="10">
+                <StackPanel>
+                  <TextBlock Text="动作预览" Foreground="#F2F8FF" FontWeight="Bold" Margin="0,0,0,8" />
+                  <UniformGrid Columns="4">
+                    <Button Style="{StaticResource PreviewButton}" Click="PreviewIdle_Click">
+                      <StackPanel>
+                        <Image Source="assets/previews/idle.png" Width="46" Height="46" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality" />
+                        <TextBlock Text="站立" HorizontalAlignment="Center" Foreground="#F2F8FF" Margin="0,4,0,0" />
+                      </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource PreviewButton}" Click="PreviewDrag_Click">
+                      <StackPanel>
+                        <Image Source="assets/previews/drag_hold.png" Width="46" Height="46" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality" />
+                        <TextBlock Text="拖拽" HorizontalAlignment="Center" Foreground="#F2F8FF" Margin="0,4,0,0" />
+                      </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource PreviewButton}" Click="PreviewThink_Click">
+                      <StackPanel>
+                        <Image Source="assets/previews/study_guard.png" Width="46" Height="46" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality" />
+                        <TextBlock Text="思考" HorizontalAlignment="Center" Foreground="#F2F8FF" Margin="0,4,0,0" />
+                      </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource PreviewButton}" Click="PreviewWave_Click">
+                      <StackPanel>
+                        <Image Source="assets/previews/part_hand_wave.png" Width="46" Height="46" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality" />
+                        <TextBlock Text="挥手" HorizontalAlignment="Center" Foreground="#F2F8FF" Margin="0,4,0,0" />
+                      </StackPanel>
+                    </Button>
+                  </UniformGrid>
+                </StackPanel>
+              </Border>
+            </StackPanel>
+          </TabItem>
+        </TabControl>
+      </Grid>
+    </Border>
+  </Canvas>
+</Window>

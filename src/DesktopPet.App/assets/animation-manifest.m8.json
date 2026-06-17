@@ -1,0 +1,335 @@
+{
+  "version": "m8_artpack_v1",
+  "canvas": {
+    "width": 900,
+    "height": 900,
+    "bottom_line_y": 865,
+    "target_height": 830
+  },
+  "notes": "Art-only M8 pack. All visible character actions come from a single canonical master design and green-screen source set. Sequence entries may intentionally alias canonical poses where dedicated intermediate art is not yet generated.",
+  "animations": {
+    "character_master_idle": {
+      "frames": [
+        "assets/animations_m8/character_master_idle/000.png"
+      ],
+      "fps": 1,
+      "loop": false,
+      "source_keys": [
+        "character_master_idle"
+      ],
+      "quality": "canonical"
+    },
+    "idle": {
+      "frames": [
+        "assets/animations_m8/idle/000.png",
+        "assets/animations_m8/idle/001.png",
+        "assets/animations_m8/idle/002.png"
+      ],
+      "fps": 6,
+      "loop": true,
+      "source_keys": [
+        "character_master_idle",
+        "idle_blink",
+        "character_master_idle"
+      ],
+      "quality": "canonical"
+    },
+    "idle_blink": {
+      "frames": [
+        "assets/animations_m8/idle_blink/000.png"
+      ],
+      "fps": 1,
+      "loop": false,
+      "source_keys": [
+        "idle_blink"
+      ],
+      "quality": "canonical"
+    },
+    "idle_cheer": {
+      "frames": [
+        "assets/animations_m8/idle_cheer/000.png"
+      ],
+      "fps": 1,
+      "loop": false,
+      "source_keys": [
+        "idle_cheer"
+      ],
+      "quality": "canonical"
+    },
+    "hover_shy": {
+      "frames": [
+        "assets/animations_m8/hover_shy/000.png"
+      ],
+      "fps": 1,
+      "loop": false,
+      "source_keys": [
+        "hover_shy"
+      ],
+      "quality": "canonical"
+    },
+    "face_pout": {
+      "frames": [
+        "assets/animations_m8/face_pout/000.png"
+      ],
+      "fps": 1,
+      "loop": false,
+      "source_keys": [
+        "face_pout"
+      ],
+      "quality": "canonical"
+    },
+    "hand_invite": {
+      "frames": [
+        "assets/animations_m8/hand_invite/000.png"
+      ],
+      "fps": 1,
+      "loop": false,
+      "source_keys": [
+        "hand_invite"
+      ],
+      "quality": "canonical"
+    },
+    "hand_wave": {
+      "frames": [
+        "assets/animations_m8/hand_wave/000.png"
+      ],
+      "fps": 1,
+      "loop": false,
+      "source_keys": [
+        "hand_wave"
+      ],
+      "quality": "canonical"
+    },
+    "study_guard": {
+      "frames": [
+        "assets/animations_m8/study_guard/000.png"
+      ],
+      "fps": 1,
+      "loop": false,
+      "source_keys": [
+        "study_guard"
+      ],
+      "quality": "canonical"
+    },
+    "feed_snack_eat": {
+      "frames": [
+        "assets/animations_m8/feed_snack_eat/000.png"
+      ],
+      "fps": 1,
+      "loop": false,
+      "source_keys": [
+        "feed_snack_eat"
+      ],
+      "quality": "canonical"
+    },
+    "feed_meal_present": {
+      "frames": [
+        "assets/animations_m8/feed_meal_present/000.png"
+      ],
+      "fps": 1,
+      "loop": false,
+      "source_keys": [
+        "feed_meal_present"
+      ],
+      "quality": "canonical"
+    },
+    "feed_snack_01_notice": {
+      "frames": [
+        "assets/animations_m8/feed_snack_01_notice/000.png"
+      ],
+      "fps": 1,
+      "loop": false,
+      "source_keys": [
+        "character_master_idle"
+      ],
+      "quality": "alias_or_sequence_scaffold"
+    },
+    "feed_snack_02_reach": {
+      "frames": [
+        "assets/animations_m8/feed_snack_02_reach/000.png"
+      ],
+      "fps": 1,
+      "loop": false,
+      "source_keys": [
+        "hand_invite"
+      ],
+      "quality": "alias_or_sequence_scaffold"
+    },
+    "feed_snack_03_take": {
+      "frames": [
+        "assets/animations_m8/feed_snack_03_take/000.png"
+      ],
+      "fps": 1,
+      "loop": false,
+      "source_keys": [
+        "feed_snack_eat"
+      ],
+      "quality": "alias_or_sequence_scaffold"
+    },
+    "feed_snack_04_eat": {
+      "frames": [
+        "assets/animations_m8/feed_snack_04_eat/000.png"
+      ],
+      "fps": 1,
+      "loop": false,
+      "source_keys": [
+        "feed_snack_eat"
+      ],
+      "quality": "alias_or_sequence_scaffold"
+    },
+    "feed_snack_05_happy": {
+      "frames": [
+        "assets/animations_m8/feed_snack_05_happy/000.png"
+      ],
+      "fps": 1,
+      "loop": false,
+      "source_keys": [
+        "idle_cheer"
+      ],
+      "quality": "alias_or_sequence_scaffold"
+    },
+    "feed_meal_01_notice": {
+      "frames": [
+        "assets/animations_m8/feed_meal_01_notice/000.png"
+      ],
+      "fps": 1,
+      "loop": false,
+      "source_keys": [
+        "character_master_idle"
+      ],
+      "quality": "alias_or_sequence_scaffold"
+    },
+    "feed_meal_02_reach": {
+      "frames": [
+        "assets/animations_m8/feed_meal_02_reach/000.png"
+      ],
+      "fps": 1,
+      "loop": false,
+      "source_keys": [
+        "hand_invite"
+      ],
+      "quality": "alias_or_sequence_scaffold"
+    },
+    "feed_meal_03_take": {
+      "frames": [
+        "assets/animations_m8/feed_meal_03_take/000.png"
+      ],
+      "fps": 1,
+      "loop": false,
+      "source_keys": [
+        "feed_meal_present"
+      ],
+      "quality": "alias_or_sequence_scaffold"
+    },
+    "feed_meal_04_eat": {
+      "frames": [
+        "assets/animations_m8/feed_meal_04_eat/000.png"
+      ],
+      "fps": 1,
+      "loop": false,
+      "source_keys": [
+        "feed_meal_present"
+      ],
+      "quality": "alias_or_sequence_scaffold"
+    },
+    "feed_meal_05_happy": {
+      "frames": [
+        "assets/animations_m8/feed_meal_05_happy/000.png"
+      ],
+      "fps": 1,
+      "loop": false,
+      "source_keys": [
+        "idle_cheer"
+      ],
+      "quality": "alias_or_sequence_scaffold"
+    },
+    "part_head_pat": {
+      "frames": [
+        "assets/animations_m8/part_head_pat/000.png"
+      ],
+      "fps": 1,
+      "loop": false,
+      "source_keys": [
+        "idle_blink"
+      ],
+      "quality": "alias_or_sequence_scaffold"
+    },
+    "part_face_blush": {
+      "frames": [
+        "assets/animations_m8/part_face_blush/000.png"
+      ],
+      "fps": 1,
+      "loop": false,
+      "source_keys": [
+        "hover_shy"
+      ],
+      "quality": "alias_or_sequence_scaffold"
+    },
+    "part_face_pout": {
+      "frames": [
+        "assets/animations_m8/part_face_pout/000.png"
+      ],
+      "fps": 1,
+      "loop": false,
+      "source_keys": [
+        "face_pout"
+      ],
+      "quality": "alias_or_sequence_scaffold"
+    },
+    "part_hand_invite": {
+      "frames": [
+        "assets/animations_m8/part_hand_invite/000.png"
+      ],
+      "fps": 1,
+      "loop": false,
+      "source_keys": [
+        "hand_invite"
+      ],
+      "quality": "alias_or_sequence_scaffold"
+    },
+    "part_hand_wave": {
+      "frames": [
+        "assets/animations_m8/part_hand_wave/000.png"
+      ],
+      "fps": 1,
+      "loop": false,
+      "source_keys": [
+        "hand_wave"
+      ],
+      "quality": "alias_or_sequence_scaffold"
+    },
+    "part_hand_highfive": {
+      "frames": [
+        "assets/animations_m8/part_hand_highfive/000.png"
+      ],
+      "fps": 1,
+      "loop": false,
+      "source_keys": [
+        "hand_wave"
+      ],
+      "quality": "alias_or_sequence_scaffold"
+    },
+    "tap_annoyed": {
+      "frames": [
+        "assets/animations_m8/tap_annoyed/000.png"
+      ],
+      "fps": 1,
+      "loop": false,
+      "source_keys": [
+        "face_pout"
+      ],
+      "quality": "alias_or_sequence_scaffold"
+    },
+    "talking": {
+      "frames": [
+        "assets/animations_m8/talking/000.png"
+      ],
+      "fps": 1,
+      "loop": false,
+      "source_keys": [
+        "hand_invite"
+      ],
+      "quality": "alias_or_sequence_scaffold"
+    }
+  }
+}

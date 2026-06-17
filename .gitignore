@@ -1,0 +1,18 @@
+# Build output
+[Bb]in/
+[Oo]bj/
+artifacts/
+TestResults/
+
+# IDE and editor state
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+
+# Logs and OS files
+*.log
+.DS_Store
+Thumbs.db
+Desktop.ini

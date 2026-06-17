@@ -1,0 +1,59 @@
+{
+  "schema": 1,
+  "props": {
+    "prop_cookie": {
+      "id": "prop_cookie",
+      "sheet": "props/prop_cookie.png",
+      "width": 64,
+      "height": 64
+    },
+    "prop_bento": {
+      "id": "prop_bento",
+      "sheet": "props/prop_bento.png",
+      "width": 80,
+      "height": 80
+    },
+    "prop_book": {
+      "id": "prop_book",
+      "sheet": "props/prop_book.png",
+      "width": 80,
+      "height": 64
+    },
+    "prop_tea": {
+      "id": "prop_tea",
+      "sheet": "props/prop_tea.png",
+      "width": 48,
+      "height": 64
+    },
+    "fx_heart": {
+      "id": "fx_heart",
+      "sheet": "props/fx_heart.png",
+      "width": 48,
+      "height": 48
+    },
+    "fx_sparkle": {
+      "id": "fx_sparkle",
+      "sheet": "props/fx_sparkle.png",
+      "width": 48,
+      "height": 48
+    },
+    "prop_cake": {
+      "id": "prop_cake",
+      "sheet": "props/prop_cake.png",
+      "width": 64,
+      "height": 64
+    },
+    "prop_candy": {
+      "id": "prop_candy",
+      "sheet": "props/prop_candy.png",
+      "width": 64,
+      "height": 64
+    },
+    "prop_omurice": {
+      "id": "prop_omurice",
+      "sheet": "props/prop_omurice.png",
+      "width": 80,
+      "height": 80
+    }
+  }
+}
