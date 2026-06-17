@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
-from PIL import Image, ImageFilter
+from PIL import Image, ImageDraw, ImageFilter
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,11 +27,15 @@ class RigFrame:
     lower_sx: float = 1
     lower_sy: float = 1
     lower_angle: float = 0
+    lower_wave: float = 0
+    lower_wave_phase: float = 0
     upper_dx: float = 0
     upper_dy: float = 0
     upper_sx: float = 1
     upper_sy: float = 1
     upper_angle: float = 0
+    upper_wave: float = 0
+    upper_wave_phase: float = 0
 
 
 def chroma_key_green(image: Image.Image) -> Image.Image:
@@ -134,6 +138,37 @@ def transform_layer(
     )
 
 
+def wave_layer_horizontal(layer: Image.Image, amplitude: float, phase: float, power: float = 1.35) -> Image.Image:
+    if abs(amplitude) < 0.01:
+        return layer
+
+    bbox = layer.getchannel("A").getbbox()
+    if bbox is None:
+        return layer
+
+    arr = np.array(layer)
+    out = np.zeros_like(arr)
+    y0, y1 = bbox[1], bbox[3]
+    height = max(1, y1 - y0)
+
+    for y in range(CANVAS_SIZE):
+        if y < y0 or y >= y1:
+            out[y] = arr[y]
+            continue
+
+        yn = (y - y0) / height
+        weight = max(0.0, min(1.0, yn)) ** power
+        shift = int(round(amplitude * weight * math.sin(phase + yn * math.tau * 1.12)))
+        if shift > 0:
+            out[y, shift:] = arr[y, : CANVAS_SIZE - shift]
+        elif shift < 0:
+            out[y, : CANVAS_SIZE + shift] = arr[y, -shift:]
+        else:
+            out[y] = arr[y]
+
+    return Image.fromarray(out, "RGBA")
+
+
 def render_frame(
     lower: Image.Image,
     upper: Image.Image,
@@ -151,6 +186,7 @@ def render_frame(
         dx=frame.lower_dx,
         dy=frame.lower_dy,
     )
+    lower_layer = wave_layer_horizontal(lower_layer, frame.lower_wave, frame.lower_wave_phase, power=1.12)
     upper_layer = transform_layer(
         upper,
         sx=frame.upper_sx,
@@ -160,6 +196,7 @@ def render_frame(
         dx=frame.upper_dx,
         dy=frame.upper_dy,
     )
+    upper_layer = wave_layer_horizontal(upper_layer, frame.upper_wave, frame.upper_wave_phase, power=1.45)
     canvas.alpha_composite(lower_layer)
     canvas.alpha_composite(upper_layer)
     return canvas
@@ -176,8 +213,12 @@ def idle_frames(count: int) -> list[RigFrame]:
                 lower_dy=-5.0 * breath,
                 lower_sx=1.0 - 0.004 * breath,
                 lower_sy=1.0 + 0.008 * breath,
+                lower_wave=1.2,
+                lower_wave_phase=phase + 0.5,
                 upper_dy=-7.0 * breath,
-                upper_angle=0.8 * sway,
+                upper_angle=1.0 * sway,
+                upper_wave=2.8,
+                upper_wave_phase=phase + 1.1,
             )
         )
     return frames
@@ -193,9 +234,13 @@ def hover_frames(count: int) -> list[RigFrame]:
                 lower_dy=-8.0 - 3.0 * bounce,
                 lower_sx=0.998,
                 lower_sy=1.006,
-                lower_angle=0.5 * math.sin(phase + 0.4),
-                upper_dy=-10.0 - 4.0 * bounce,
-                upper_angle=1.5 * math.sin(phase + 0.9),
+                lower_angle=0.9 * math.sin(phase + 0.4),
+                lower_wave=2.2,
+                lower_wave_phase=phase + 1.2,
+                upper_dy=-11.0 - 5.0 * bounce,
+                upper_angle=2.1 * math.sin(phase + 0.9),
+                upper_wave=4.6,
+                upper_wave_phase=phase + 1.8,
             )
         )
     return frames
@@ -212,9 +257,13 @@ def drag_hold_frames(count: int) -> list[RigFrame]:
                 lower_dy=-30.0 + 4.0 * math.sin(phase + 0.2),
                 lower_sx=0.992,
                 lower_sy=1.018,
-                lower_angle=2.2 * swing,
+                lower_angle=3.0 * swing,
+                lower_wave=4.8,
+                lower_wave_phase=phase + 2.3,
                 upper_dy=-35.0 + 3.0 * math.sin(phase),
-                upper_angle=1.4 * lag,
+                upper_angle=2.2 * lag,
+                upper_wave=8.0,
+                upper_wave_phase=phase + 3.1,
             )
         )
     return frames
@@ -238,15 +287,20 @@ def drop_frames() -> list[RigFrame]:
     frames: list[RigFrame] = []
     for idx, (dy, sx, sy) in enumerate(keys):
         settle = idx / max(1, len(keys) - 1)
+        impact = math.sin(settle * math.pi)
         frames.append(
             RigFrame(
                 lower_dy=dy,
                 lower_sx=sx,
                 lower_sy=sy,
+                lower_wave=3.0 * impact,
+                lower_wave_phase=settle * math.tau + 1.0,
                 upper_dy=dy - 2.0 * math.sin(settle * math.pi),
                 upper_sx=sx,
                 upper_sy=sy,
-                upper_angle=0.8 * math.sin(settle * math.tau),
+                upper_angle=1.4 * math.sin(settle * math.tau),
+                upper_wave=5.6 * impact,
+                upper_wave_phase=settle * math.tau + 2.2,
             )
         )
     return frames
@@ -275,14 +329,17 @@ def save_contact_sheet(sequences: dict[str, list[Image.Image]]) -> None:
     thumb_size = 128
     gap = 12
     label_h = 22
+    label_w = 110
     max_cols = max(len(frames) for frames in sequences.values())
-    sheet_w = gap + max_cols * (thumb_size + gap)
+    sheet_w = label_w + gap + max_cols * (thumb_size + gap)
     sheet_h = gap + len(sequences) * (thumb_size + label_h + gap)
     sheet = Image.new("RGBA", (sheet_w, sheet_h), (20, 24, 32, 255))
+    draw = ImageDraw.Draw(sheet)
 
     y = gap
     for name, frames in sequences.items():
-        x = gap
+        draw.text((gap, y + thumb_size // 2 - 8), name, fill=(225, 235, 255, 255))
+        x = label_w + gap
         for frame in frames:
             thumb = frame.resize((thumb_size, thumb_size), Image.Resampling.LANCZOS)
             preview = Image.new("RGBA", (thumb_size, thumb_size), (42, 46, 58, 255))
