@@ -28,6 +28,7 @@ DRAG_HOLD_MAX_WIDTH = 704
 DRAG_HOLD_FOOT_Y = 736
 NORMALIZED_ALPHA_SIZE = 256
 MAX_NORMALIZED_ALPHA_LOSS_PCT = 9.0
+OPAQUE_ALPHA_THRESHOLD = 150
 
 HIT_REGIONS = [
     {"id": "face", "x": 0.36, "y": 0.18, "w": 0.28, "h": 0.18},
@@ -414,7 +415,16 @@ def render_frame(
     canvas.alpha_composite(hair_layer)
     canvas.alpha_composite(lower_layer)
     canvas.alpha_composite(upper_layer)
-    return canvas
+    return harden_subject_alpha(canvas)
+
+
+def harden_subject_alpha(image: Image.Image) -> Image.Image:
+    arr = np.array(image).astype(np.float32)
+    alpha = arr[..., 3]
+    alpha = np.where(alpha >= OPAQUE_ALPHA_THRESHOLD, 255, alpha)
+    alpha = np.where(alpha <= 4, 0, alpha)
+    arr[..., 3] = alpha
+    return Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8), "RGBA")
 
 
 def idle_frames(count: int) -> list[RigFrame]:
