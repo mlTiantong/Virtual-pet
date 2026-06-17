@@ -240,9 +240,9 @@
               <StackPanel Orientation="Horizontal" Margin="2,0,0,2">
                 <TextBlock Text="✓" Foreground="#55E08F" FontSize="18" FontWeight="Bold" Margin="0,0,8,0" />
                 <TextBlock Text="已加载：" Foreground="#F2F8FF" FontWeight="SemiBold" FontSize="14" />
-                <TextBlock Text="基础人物参考图" Foreground="#7FB1FF" FontWeight="Bold" FontSize="14" />
+                <TextBlock Text="AI 骨骼实验动作" Foreground="#7FB1FF" FontWeight="Bold" FontSize="14" />
               </StackPanel>
-              <TextBlock Text="当前已移除不统一动作素材，仅保留 reference/参考图.png。" Foreground="#C9D7EA" FontSize="12" Margin="28,0,0,12" TextWrapping="Wrap" />
+              <TextBlock Text="当前由 reference/参考图.png 生成 idle、hover、drag、drop 实验帧。" Foreground="#C9D7EA" FontSize="12" Margin="28,0,0,12" TextWrapping="Wrap" />
             </StackPanel>
           </TabItem>
         </TabControl>

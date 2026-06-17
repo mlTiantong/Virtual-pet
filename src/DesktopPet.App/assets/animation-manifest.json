@@ -2,7 +2,7 @@
   "schema": 2,
   "characterId": "blue_girl_m1",
   "defaultAnimation": "idle_m8",
-  "assetBaseline": "reference_only",
+  "assetBaseline": "rig_prototype_v1",
   "hitRegions": [
     {
       "id": "face",
@@ -34,15 +34,107 @@
     }
   ],
   "animations": {
+    "reference_pose": {
+      "id": "reference_pose",
+      "type": "frames",
+      "fps": 1,
+      "loop": false,
+      "durationMs": 1000,
+      "returnToIdle": false,
+      "frames": [
+        "reference/参考图.png"
+      ]
+    },
     "idle_m8": {
       "id": "idle_m8",
       "type": "frames",
-      "fps": 1,
+      "fps": 8,
       "loop": true,
       "durationMs": 0,
       "returnToIdle": false,
       "frames": [
-        "reference/参考图.png"
+        "runtime/animations/idle_m8/000.png",
+        "runtime/animations/idle_m8/001.png",
+        "runtime/animations/idle_m8/002.png",
+        "runtime/animations/idle_m8/003.png",
+        "runtime/animations/idle_m8/004.png",
+        "runtime/animations/idle_m8/005.png",
+        "runtime/animations/idle_m8/006.png",
+        "runtime/animations/idle_m8/007.png",
+        "runtime/animations/idle_m8/008.png",
+        "runtime/animations/idle_m8/009.png",
+        "runtime/animations/idle_m8/010.png",
+        "runtime/animations/idle_m8/011.png",
+        "runtime/animations/idle_m8/012.png",
+        "runtime/animations/idle_m8/013.png",
+        "runtime/animations/idle_m8/014.png",
+        "runtime/animations/idle_m8/015.png"
+      ]
+    },
+    "hover_m8": {
+      "id": "hover_m8",
+      "type": "frames",
+      "fps": 10,
+      "loop": false,
+      "durationMs": 1200,
+      "returnToIdle": true,
+      "frames": [
+        "runtime/animations/hover_m8/000.png",
+        "runtime/animations/hover_m8/001.png",
+        "runtime/animations/hover_m8/002.png",
+        "runtime/animations/hover_m8/003.png",
+        "runtime/animations/hover_m8/004.png",
+        "runtime/animations/hover_m8/005.png",
+        "runtime/animations/hover_m8/006.png",
+        "runtime/animations/hover_m8/007.png",
+        "runtime/animations/hover_m8/008.png",
+        "runtime/animations/hover_m8/009.png",
+        "runtime/animations/hover_m8/010.png",
+        "runtime/animations/hover_m8/011.png"
+      ]
+    },
+    "drag_hold": {
+      "id": "drag_hold",
+      "type": "frames",
+      "fps": 10,
+      "loop": true,
+      "durationMs": 0,
+      "returnToIdle": false,
+      "frames": [
+        "runtime/animations/drag_hold/000.png",
+        "runtime/animations/drag_hold/001.png",
+        "runtime/animations/drag_hold/002.png",
+        "runtime/animations/drag_hold/003.png",
+        "runtime/animations/drag_hold/004.png",
+        "runtime/animations/drag_hold/005.png",
+        "runtime/animations/drag_hold/006.png",
+        "runtime/animations/drag_hold/007.png",
+        "runtime/animations/drag_hold/008.png",
+        "runtime/animations/drag_hold/009.png",
+        "runtime/animations/drag_hold/010.png",
+        "runtime/animations/drag_hold/011.png"
+      ]
+    },
+    "drop": {
+      "id": "drop",
+      "type": "frames",
+      "fps": 12,
+      "loop": false,
+      "durationMs": 1000,
+      "returnToIdle": true,
+      "frames": [
+        "runtime/animations/drop/000.png",
+        "runtime/animations/drop/001.png",
+        "runtime/animations/drop/002.png",
+        "runtime/animations/drop/003.png",
+        "runtime/animations/drop/004.png",
+        "runtime/animations/drop/005.png",
+        "runtime/animations/drop/006.png",
+        "runtime/animations/drop/007.png",
+        "runtime/animations/drop/008.png",
+        "runtime/animations/drop/009.png",
+        "runtime/animations/drop/010.png",
+        "runtime/animations/drop/011.png"
       ]
     }
   }

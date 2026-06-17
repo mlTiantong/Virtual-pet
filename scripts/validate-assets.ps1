@@ -115,16 +115,14 @@ foreach ($image in $allImages) {
     }
 }
 
-if ($allImages.Count -ne 1) {
-    $missing.Add("expected exactly one image asset, found $($allImages.Count)")
-}
-
-if ($allImages.Count -eq 1) {
-    $referenceImage = Get-AssetRelativePath $allImages[0].FullName
-    $referencePrefix = "reference$([System.IO.Path]::DirectorySeparatorChar)"
-    if (-not $referenceImage.StartsWith($referencePrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
-        $missing.Add("reference image must live under reference -> $referenceImage")
-    }
+$referencePrefix = "reference$([System.IO.Path]::DirectorySeparatorChar)"
+$referenceImages = @($allImages | Where-Object {
+    (Get-AssetRelativePath $_.FullName).StartsWith($referencePrefix, [System.StringComparison]::OrdinalIgnoreCase)
+})
+if ($referenceImages.Count -ne 1) {
+    $missing.Add("expected exactly one reference image, found $($referenceImages.Count)")
+} else {
+    $referenceImage = Get-AssetRelativePath $referenceImages[0].FullName
     if (-not $usedImages.Contains($referenceImage)) {
         $missing.Add("reference image is not used -> $referenceImage")
     }
