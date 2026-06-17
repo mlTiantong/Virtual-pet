@@ -1,15 +1,15 @@
-# DesktopPet M1 WPF Prototype - v6 GreenSynced
+# DesktopPet M1 WPF Prototype
 
-这是“蓝发桌宠”M1 可运行主循环原型的 **v6 工程同步版**。
+这是“蓝发桌宠”M1 可运行主循环原型。
 
-本版以 `v5 GreenReset` 资源为基线，完成了工程、资源、manifest、状态映射与文档同步：
+当前资源已整理为运行时精简集：
 
-- `assets/animations/` 已由绿色背景源图抠图结果回填。
-- `assets/source_green_full/` 保留全部绿色背景原图。
-- `assets/source_green_keyed/` 保留绿色抠图后的透明源图。
-- `assets/source_green_manifest.json` 记录动画帧与绿色源图的对应关系。
-- `animation-manifest.json` 与当前动画目录完成一致性检查。
-- 代码里的状态到动作映射已与当前资源基线对齐。
+- `assets/animation-manifest.json` 是唯一动画入口，默认回退到 `idle_m8`。
+- `assets/animations_m8/` 保留主角色 900x900 M8 动作帧。
+- `assets/spritesheets/` 保留仍在交互中使用的 4x4 SpriteSheet。
+- `assets/previews/` 只保留 HUD 实际引用的 4 张预览图。
+- `assets/props/` 只保留投喂序列实际使用的 4 张道具/特效图。
+- 旧绿幕源图、contact sheet、原始出图批次、服装/装饰图和未引用预览图已移除。
 
 ## 工程栈
 
@@ -17,7 +17,7 @@
 - WPF / C#
 - .NET 8
 - 本地 JSON 存档
-- PNG 动作帧资源
+- PNG 动作帧与 SpriteSheet 资源
 - 透明无边框桌宠窗口
 - `WM_NCHITTEST` 透明区域穿透
 
@@ -25,7 +25,7 @@
 
 - WPF 透明无边框桌宠窗口。
 - PNG 动作 manifest 加载与轻量帧播放。
-- v5 绿色底资源抠图结果接入。
+- 精简后的 M8 动作资源接入。
 - 透明像素 `WM_NCHITTEST` 穿透。
 - 整窗点击穿透开关，托盘菜单可恢复。
 - 鼠标悬停、点击、连续点击升级、拖拽、放下反馈。
@@ -67,32 +67,35 @@ artifacts\publish\DesktopPet.App
 ```text
 src/DesktopPet.App/assets/
 ├─ animation-manifest.json
-├─ source_green_manifest.json
-├─ source_green_full/      # 绿色背景原图
-├─ source_green_keyed/     # 抠图后的透明源图
-├─ animations/             # WPF 原型实际加载的动作帧
+├─ motion-sequence.m8.json
+├─ prop-manifest.m8.json
+├─ animations_m8/          # 主角色 M8 动作帧
+├─ spritesheets/           # 仍被运行时使用的 4x4 SpriteSheet
+├─ previews/               # HUD 预览图
+├─ props/                  # 投喂序列道具和特效
 └─ dialogue/
 ```
 
-## 检查文件
+## 资源检查
 
-包根目录包含：
+运行：
 
-- `ENGINEERING_SYNC_REPORT_v6.md`
-- `RESOURCE_STATE_MAPPING_v6.md`
-- `ANIMATIONS_FROM_GREEN_CONTACT_SHEET_v6.png`
-- `GREEN_SOURCE_KEYED_CONTACT_SHEET_v6.png`
+```powershell
+.\scripts\validate-assets.ps1
+```
+
+脚本会检查动画、预览图、道具、motion sequence 引用是否存在，并把未引用图片视为失败。
 
 ## 当前限制
 
 - 当前多数动作仍为单帧原型资源，不是真正的 10-60 FPS 序列帧动画。
-- `rest_tea` 目前复用甜点/喂食相关绿色源图作为占位；后续建议补一张专用“捧茶”绿色源图。
-- 服装切换目前保存状态并触发展示动作，但尚未实现分层 overlay 服装系统。
-- 当前环境不是 Windows，无法在这里实际运行 WPF；请在 Windows + .NET 8 SDK 上做最终编译验证。
+- `rest_tea`、拖拽和部分身体交互仍使用保留的 SpriteSheet 资源。
+- 服装切换目前只保存状态并触发通用反馈，未保留服装/装饰图片资源。
+- WPF 运行需要 Windows + .NET 8 SDK。
 
 ## 推荐下一步
 
-1. 在 Windows 上运行 `scripts/validate-assets.ps1`。
+1. 运行 `scripts/validate-assets.ps1`。
 2. 运行 `scripts/run.ps1` 验证窗口、透明穿透、HUD 和交互。
-3. 对 `rest_tea`、`drop`、`part_feet_step` 这类近似资源补专用绿色底动作图。
+3. 为 `rest_tea`、`drop`、`part_feet_step` 这类近似资源补正式 M8 动作帧。
 4. 将单帧动作替换为真正的 PNG 序列帧。

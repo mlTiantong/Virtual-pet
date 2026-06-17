@@ -35,8 +35,8 @@ public sealed class MotionSequenceService
     public async Task PlaySequenceAsync(
         string sequenceId,
         Action<string, bool> playAnimation,
-        Func<string, double, double, Task>? showAndMoveProp = null,
-        Func<string, double, int>? tweenProp = null)
+        Func<string, string?, Task>? showProp = null,
+        Action<string>? hideProp = null)
     {
         if (!_manifest.Sequences.TryGetValue(sequenceId, out var seq)) return;
 
@@ -53,10 +53,11 @@ public sealed class MotionSequenceService
                 playAnimation(step.Animation, false);
             }
 
-            if (step.Prop != null && step.Motion != null && showAndMoveProp != null && tweenProp != null)
+            if (step.Prop != null && showProp != null)
             {
-                await showAndMoveProp(step.Prop, 0, 0);
+                await showProp(step.Prop, step.Motion);
                 await Task.Delay(step.DurationMs, token);
+                hideProp?.Invoke(step.Prop);
             }
             else if (step.DurationMs > 0)
             {

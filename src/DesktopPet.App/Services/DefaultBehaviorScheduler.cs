@@ -20,8 +20,8 @@ public sealed class DefaultBehaviorScheduler
             PetHitRegion.Hand => state.Intimacy >= 35
                 ? new PetAction("part_hand_highfive", "tap.hand")
                 : new PetAction("hand_invite_m8", "tap.hand"),
-            PetHitRegion.Body or PetHitRegion.Outfit => new PetAction("part_outfit_show", "tap.outfit"),
-            PetHitRegion.Accessory => new PetAction("part_accessory_proud", "tap.accessory"),
+            PetHitRegion.Body or PetHitRegion.Outfit => new PetAction("face_reaction_m8", "tap.outfit"),
+            PetHitRegion.Accessory => new PetAction("face_reaction_m8", "tap.accessory"),
             PetHitRegion.Feet => new PetAction("part_feet_step", "tap.feet"),
             _ => new PetAction("hover_curious", "hover.default")
         };
@@ -42,5 +42,5 @@ public sealed class DefaultBehaviorScheduler
         _ => new PetAction("feed_snack", "feed.snack")
     };
 
-    public PetAction HandleOutfit(string outfit) => new("part_outfit_show", "outfit.change");
+    public PetAction HandleOutfit(string outfit) => new("idle_cheer_m8", "outfit.change");
 }

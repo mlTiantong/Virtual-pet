@@ -472,7 +472,7 @@ public partial class PetWindow : Window
     private void MealButton_Click(object sender, RoutedEventArgs e) => Feed("meal");
     private void TeaButton_Click(object sender, RoutedEventArgs e) => Feed("tea");
 
-    private void Feed(string foodKind)
+    private async void Feed(string foodKind)
     {
         if (_state.FoodInventory.TryGetValue(foodKind, out var count) && count <= 0)
         {
@@ -492,7 +492,18 @@ public partial class PetWindow : Window
 
         if (seqId != null && _motionSeq?.HasSequence(seqId) == true)
         {
-            _ = _motionSeq.PlaySequenceAsync(seqId, PlayAnimation);
+            try
+            {
+                await _motionSeq.PlaySequenceAsync(
+                    seqId,
+                    PlayAnimation,
+                    ShowSequencePropAsync,
+                    propId => _propLayer?.HideProp(propId));
+            }
+            finally
+            {
+                _propLayer?.HideAllProps();
+            }
         }
         else
         {
@@ -501,6 +512,20 @@ public partial class PetWindow : Window
 
         SaveAll();
         UpdateStatusText();
+    }
+
+    private Task ShowSequencePropAsync(string propId, string? motion)
+    {
+        var point = motion switch
+        {
+            "pop" => new Point(300, 260),
+            "flyToHands" => new Point(250, 330),
+            "flyToMouthOrHand" => new Point(250, 315),
+            _ => new Point(260, 320)
+        };
+
+        _propLayer?.ShowProp(propId, point.X, point.Y);
+        return Task.CompletedTask;
     }
 
     private void ChatSendButton_Click(object sender, RoutedEventArgs e)

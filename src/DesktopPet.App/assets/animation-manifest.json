@@ -1,9 +1,8 @@
 {
   "schema": 2,
   "characterId": "blue_girl_m1",
-  "defaultAnimation": "idle",
-  "assetBaseline": "v8_spritesheet_glass_ui",
-  "sourceManifest": "source_green_manifest.json",
+  "defaultAnimation": "idle_m8",
+  "assetBaseline": "runtime_trimmed_m8",
   "hitRegions": [
     {
       "id": "face",
@@ -25,20 +24,6 @@
       "y": 0.34,
       "w": 0.5,
       "h": 0.2
-    },
-    {
-      "id": "accessory",
-      "x": 0.08,
-      "y": 0.16,
-      "w": 0.84,
-      "h": 0.22
-    },
-    {
-      "id": "outfit",
-      "x": 0.24,
-      "y": 0.38,
-      "w": 0.52,
-      "h": 0.37
     },
     {
       "id": "feet",
@@ -203,36 +188,6 @@
       "id": "part_hand_wave",
       "type": "spritesheet",
       "sheet": "spritesheets/part_hand_wave.png",
-      "columns": 4,
-      "rows": 4,
-      "frameCount": 16,
-      "frameWidth": 256,
-      "frameHeight": 256,
-      "fps": 10,
-      "loop": false,
-      "durationMs": 1600,
-      "returnToIdle": true,
-      "frames": []
-    },
-    "part_outfit_show": {
-      "id": "part_outfit_show",
-      "type": "spritesheet",
-      "sheet": "spritesheets/part_outfit_show.png",
-      "columns": 4,
-      "rows": 4,
-      "frameCount": 16,
-      "frameWidth": 256,
-      "frameHeight": 256,
-      "fps": 10,
-      "loop": false,
-      "durationMs": 1600,
-      "returnToIdle": true,
-      "frames": []
-    },
-    "part_accessory_proud": {
-      "id": "part_accessory_proud",
-      "type": "spritesheet",
-      "sheet": "spritesheets/part_accessory_proud.png",
       "columns": 4,
       "rows": 4,
       "frameCount": 16,
@@ -437,21 +392,6 @@
       "loop": false,
       "durationMs": 1600,
       "returnToIdle": true,
-      "frames": []
-    },
-    "outfit_daily": {
-      "id": "outfit_daily",
-      "type": "spritesheet",
-      "sheet": "spritesheets/outfit_daily.png",
-      "columns": 4,
-      "rows": 4,
-      "frameCount": 16,
-      "frameWidth": 256,
-      "frameHeight": 256,
-      "fps": 10,
-      "loop": true,
-      "durationMs": 0,
-      "returnToIdle": false,
       "frames": []
     },
     "character_master_idle": {

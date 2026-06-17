@@ -85,7 +85,11 @@ public sealed class PropLayerService
     {
         if (_propCache.TryGetValue(def.Id, out var cached)) return cached;
 
-        var path = System.IO.Path.Combine(_assetRoot, "props", def.Sheet.Replace('/', System.IO.Path.DirectorySeparatorChar));
+        var sheetPath = def.Sheet.Replace('/', System.IO.Path.DirectorySeparatorChar);
+        var path = System.IO.Path.Combine(_assetRoot, sheetPath);
+        if (!System.IO.File.Exists(path))
+            path = System.IO.Path.Combine(_assetRoot, "props", sheetPath);
+
         if (!System.IO.File.Exists(path))
         {
             var placeholder = BitmapSource.Create(def.Width, def.Height, 96, 96,
