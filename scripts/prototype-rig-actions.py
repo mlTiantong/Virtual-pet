@@ -24,6 +24,7 @@ CANVAS_SIZE = 768
 CHARACTER_HEIGHT = 690
 FOOT_Y = 742
 DRAG_HOLD_CHARACTER_HEIGHT = 720
+DRAG_HOLD_MAX_WIDTH = 704
 DRAG_HOLD_FOOT_Y = 736
 NORMALIZED_ALPHA_SIZE = 256
 MAX_NORMALIZED_ALPHA_LOSS_PCT = 9.0
@@ -116,6 +117,7 @@ def fit_to_canvas(
     character: Image.Image,
     *,
     target_height: int = CHARACTER_HEIGHT,
+    max_width: int | None = None,
     foot_y: int = FOOT_Y,
 ) -> tuple[Image.Image, tuple[int, int, int, int]]:
     bbox = image_alpha_bbox(character)
@@ -124,6 +126,8 @@ def fit_to_canvas(
 
     crop = character.crop(bbox)
     scale = target_height / crop.height
+    if max_width is not None:
+        scale = min(scale, max_width / crop.width)
     size = (round(crop.width * scale), round(crop.height * scale))
     resized = crop.resize(size, Image.Resampling.LANCZOS)
 
@@ -174,6 +178,7 @@ def load_drag_hold_character(reference_character: Image.Image) -> tuple[Image.Im
     fitted, bbox = fit_to_canvas(
         source,
         target_height=DRAG_HOLD_CHARACTER_HEIGHT,
+        max_width=DRAG_HOLD_MAX_WIDTH,
         foot_y=DRAG_HOLD_FOOT_Y,
     )
     matched = match_character_palette(fitted, reference_character)
@@ -888,7 +893,7 @@ def write_manifest(defs: list[SequenceDef]) -> None:
         "schema": 2,
         "characterId": "blue_girl_m1",
         "defaultAnimation": "idle_m8",
-        "assetBaseline": "rig_prototype_v6_matched_drag_hold",
+        "assetBaseline": "rig_prototype_v7_prone_drag_hold",
         "hitRegions": HIT_REGIONS,
         "animations": animations,
     }
