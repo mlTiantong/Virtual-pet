@@ -506,18 +506,18 @@ def drag_hold_frames(count: int) -> list[RigFrame]:
         lag = math.sin(phase - 0.6)
         frames.append(
             RigFrame(
-                lower_dy=2.0 * math.sin(phase + 0.2),
+                lower_dy=1.4 * math.sin(phase + 0.2),
                 lower_sx=0.998,
                 lower_sy=1.004,
-                lower_angle=2.2 * swing,
-                lower_wave=2.4,
+                lower_angle=0.9 * swing,
+                lower_wave=0.45,
                 lower_wave_phase=phase + 2.3,
-                upper_dy=-1.5 + 2.4 * math.sin(phase),
-                upper_angle=1.5 * lag,
-                upper_wave=3.8,
+                upper_dy=-1.0 + 1.6 * math.sin(phase),
+                upper_angle=0.7 * lag,
+                upper_wave=0.55,
                 upper_wave_phase=phase + 3.1,
-                hair_angle=2.6 * math.sin(phase - 1.0),
-                hair_wave=3.4,
+                hair_angle=0.35 * math.sin(phase - 1.0),
+                hair_wave=0.25,
                 hair_wave_phase=phase + 3.8,
             )
         )
