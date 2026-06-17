@@ -5,6 +5,7 @@ $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $manifestPath = Join-Path $assetRoot "animation-manifest.json"
 $propManifestPath = Join-Path $assetRoot "prop-manifest.m8.json"
 $motionSeqPath = Join-Path $assetRoot "motion-sequence.m8.json"
+$dialoguePath = Join-Path $assetRoot "dialogue\blue-girl.zh-CN.json"
 $xamlPath = Join-Path $projectRoot "src\DesktopPet.App\PetWindow.xaml"
 
 if (!(Test-Path $manifestPath)) { throw "Missing animation-manifest.json" }
@@ -14,6 +15,8 @@ $missing = New-Object System.Collections.Generic.List[string]
 $usedImages = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
 $definedAnimations = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
 $codeAnimationRefs = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+$definedDialogue = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+$codeDialogueRefs = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
 
 Add-Type -AssemblyName System.Drawing
 
@@ -79,8 +82,33 @@ function Add-CodeAnimationReference {
     }
 }
 
+function Add-CodeDialogueReference {
+    param(
+        [string]$Context,
+        [string]$Category
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Category)) { return }
+    [void]$codeDialogueRefs.Add($Category)
+    if (-not $definedDialogue.Contains($Category)) {
+        $missing.Add("$Context unknown dialogue category -> $Category")
+    }
+}
+
 foreach ($prop in $manifest.animations.PSObject.Properties) {
     [void]$definedAnimations.Add($prop.Name)
+}
+
+if (!(Test-Path $dialoguePath)) {
+    $missing.Add("Missing dialogue catalog -> $dialoguePath")
+} else {
+    $dialogueCatalog = Get-Content $dialoguePath -Raw -Encoding UTF8 | ConvertFrom-Json
+    foreach ($line in $dialogueCatalog.lines.PSObject.Properties) {
+        [void]$definedDialogue.Add($line.Name)
+        if (@($line.Value).Count -eq 0) {
+            $missing.Add("dialogue: $($line.Name) has no lines")
+        }
+    }
 }
 
 if (-not $manifest.animations.PSObject.Properties[$manifest.defaultAnimation]) {
@@ -159,8 +187,20 @@ foreach ($file in $sourceFiles) {
         Add-CodeAnimationReference "$relativeSource PetAction" $match.Groups[1].Value
     }
 
+    foreach ($match in [regex]::Matches($source, 'new\s+PetAction\s*\(\s*"[^"]+"\s*,\s*"([^"]+)"')) {
+        Add-CodeDialogueReference "$relativeSource PetAction" $match.Groups[1].Value
+    }
+
     foreach ($match in [regex]::Matches($source, '=>\s*new\s*\(\s*"([^"]+)"')) {
         Add-CodeAnimationReference "$relativeSource PetAction" $match.Groups[1].Value
+    }
+
+    foreach ($match in [regex]::Matches($source, '=>\s*new\s*\(\s*"[^"]+"\s*,\s*"([^"]+)"')) {
+        Add-CodeDialogueReference "$relativeSource PetAction" $match.Groups[1].Value
+    }
+
+    foreach ($match in [regex]::Matches($source, '\.Pick\s*\(\s*"([^"]+)"')) {
+        Add-CodeDialogueReference "$relativeSource DialogueSelector.Pick" $match.Groups[1].Value
     }
 
     foreach ($preload in [regex]::Matches($source, '(?s)\.Preload\s*\((.*?)\);')) {
@@ -243,5 +283,7 @@ Write-Host "Asset validation passed." -ForegroundColor Green
 Write-Host "Animation count: $(@($manifest.animations.PSObject.Properties).Count)"
 Write-Host "Image references: $($usedImages.Count)"
 Write-Host "Code animation references: $($codeAnimationRefs.Count)"
+Write-Host "Dialogue categories: $($definedDialogue.Count)"
+Write-Host "Code dialogue references: $($codeDialogueRefs.Count)"
 Write-Host "Motion sequences: $seqCount"
 Write-Host "Props defined: $($definedProps.Count)"

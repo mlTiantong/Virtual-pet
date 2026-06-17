@@ -105,7 +105,7 @@ artifacts\rig-prototype\rig_quality_report.json
 .\scripts\validate-assets.ps1
 ```
 
-脚本会检查参考图是否存在、manifest 引用是否完整，并把未引用图片视为失败。
+脚本会检查参考图是否存在、manifest 引用和 spritesheet 尺寸是否完整，并验证代码里的动画 ID 与对话分类都能在资源清单中找到。
 
 ## 当前限制
 
