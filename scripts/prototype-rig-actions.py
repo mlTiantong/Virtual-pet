@@ -13,13 +13,18 @@ from PIL import Image, ImageDraw, ImageFilter
 ROOT = Path(__file__).resolve().parents[1]
 ASSET_ROOT = ROOT / "src" / "DesktopPet.App" / "assets"
 REFERENCE = ASSET_ROOT / "reference" / "参考图.png"
+ACTION_SOURCE_ROOT = ROOT / "art_sources" / "actions"
+DRAG_HOLD_SOURCE = ACTION_SOURCE_ROOT / "drag_hold_source.png"
 RUNTIME_ROOT = ASSET_ROOT / "runtime"
 SHEET_ROOT = RUNTIME_ROOT / "sheets"
 ARTIFACT_ROOT = ROOT / "artifacts" / "rig-prototype"
+DRAG_HOLD_MATCHED = ARTIFACT_ROOT / "drag_hold_matched.png"
 
 CANVAS_SIZE = 768
 CHARACTER_HEIGHT = 690
 FOOT_Y = 742
+DRAG_HOLD_CHARACTER_HEIGHT = 720
+DRAG_HOLD_FOOT_Y = 736
 NORMALIZED_ALPHA_SIZE = 256
 MAX_NORMALIZED_ALPHA_LOSS_PCT = 9.0
 
@@ -102,23 +107,88 @@ def chroma_key_green(image: Image.Image) -> Image.Image:
     return Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8), "RGBA")
 
 
-def fit_to_canvas(character: Image.Image) -> tuple[Image.Image, tuple[int, int, int, int]]:
-    alpha = character.getchannel("A").point(lambda p: 255 if p > 16 else 0)
-    bbox = alpha.getbbox()
+def image_alpha_bbox(character: Image.Image, threshold: int = 16) -> tuple[int, int, int, int] | None:
+    alpha = character.getchannel("A").point(lambda p: 255 if p > threshold else 0)
+    return alpha.getbbox()
+
+
+def fit_to_canvas(
+    character: Image.Image,
+    *,
+    target_height: int = CHARACTER_HEIGHT,
+    foot_y: int = FOOT_Y,
+) -> tuple[Image.Image, tuple[int, int, int, int]]:
+    bbox = image_alpha_bbox(character)
     if bbox is None:
         raise RuntimeError("Reference image did not produce a usable character alpha mask.")
 
     crop = character.crop(bbox)
-    scale = CHARACTER_HEIGHT / crop.height
+    scale = target_height / crop.height
     size = (round(crop.width * scale), round(crop.height * scale))
     resized = crop.resize(size, Image.Resampling.LANCZOS)
 
     canvas = Image.new("RGBA", (CANVAS_SIZE, CANVAS_SIZE), (0, 0, 0, 0))
     x = round((CANVAS_SIZE - resized.width) / 2)
-    y = round(FOOT_Y - resized.height)
+    y = round(foot_y - resized.height)
     canvas.alpha_composite(resized, (x, y))
     fitted_bbox = (x, y, x + resized.width, y + resized.height)
     return canvas, fitted_bbox
+
+
+def color_sample(character: Image.Image) -> np.ndarray:
+    arr = np.array(character.convert("RGBA")).astype(np.float32)
+    alpha = arr[..., 3]
+    rgb = arr[..., :3]
+    values = rgb[alpha > 64]
+    if len(values) == 0:
+        return values
+
+    luminance = values @ np.array([0.2126, 0.7152, 0.0722], dtype=np.float32)
+    fill_values = values[(luminance > 40) & (luminance < 248)]
+    return fill_values if len(fill_values) > 1000 else values
+
+
+def match_character_palette(source: Image.Image, target: Image.Image) -> Image.Image:
+    source_values = color_sample(source)
+    target_values = color_sample(target)
+    if len(source_values) == 0 or len(target_values) == 0:
+        return source
+
+    source_mean = source_values.mean(axis=0)
+    source_std = np.maximum(source_values.std(axis=0), 1.0)
+    target_mean = target_values.mean(axis=0)
+    target_std = np.maximum(target_values.std(axis=0), 1.0)
+
+    arr = np.array(source).astype(np.float32)
+    alpha = arr[..., 3]
+    matched = ((arr[..., :3] - source_mean) / source_std) * target_std + target_mean
+    arr[..., :3] = np.where((alpha > 8)[..., None], matched, arr[..., :3])
+    return Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8), "RGBA")
+
+
+def load_drag_hold_character(reference_character: Image.Image) -> tuple[Image.Image, tuple[int, int, int, int]]:
+    if not DRAG_HOLD_SOURCE.exists():
+        raise FileNotFoundError(f"Missing drag hold action source: {DRAG_HOLD_SOURCE}")
+
+    source = Image.open(DRAG_HOLD_SOURCE).convert("RGBA")
+    fitted, bbox = fit_to_canvas(
+        source,
+        target_height=DRAG_HOLD_CHARACTER_HEIGHT,
+        foot_y=DRAG_HOLD_FOOT_Y,
+    )
+    matched = match_character_palette(fitted, reference_character)
+    ARTIFACT_ROOT.mkdir(parents=True, exist_ok=True)
+    matched.save(DRAG_HOLD_MATCHED, optimize=True, compress_level=9)
+    return matched, bbox
+
+
+def pivots_for_bbox(bbox: tuple[int, int, int, int]) -> tuple[tuple[float, float], tuple[float, float]]:
+    x0, y0, x1, y1 = bbox
+    w, h = x1 - x0, y1 - y0
+    return (
+        (x0 + w * 0.5, y0 + h * 0.82),
+        (x0 + w * 0.50, y0 + h * 0.43),
+    )
 
 
 def make_layers(character: Image.Image, bbox: tuple[int, int, int, int]) -> tuple[Image.Image, Image.Image, Image.Image]:
@@ -431,18 +501,18 @@ def drag_hold_frames(count: int) -> list[RigFrame]:
         lag = math.sin(phase - 0.6)
         frames.append(
             RigFrame(
-                lower_dy=-30.0 + 4.0 * math.sin(phase + 0.2),
-                lower_sx=0.992,
-                lower_sy=1.018,
-                lower_angle=3.0 * swing,
-                lower_wave=4.8,
+                lower_dy=2.0 * math.sin(phase + 0.2),
+                lower_sx=0.998,
+                lower_sy=1.004,
+                lower_angle=2.2 * swing,
+                lower_wave=2.4,
                 lower_wave_phase=phase + 2.3,
-                upper_dy=-35.0 + 3.0 * math.sin(phase),
-                upper_angle=2.2 * lag,
-                upper_wave=8.0,
+                upper_dy=-1.5 + 2.4 * math.sin(phase),
+                upper_angle=1.5 * lag,
+                upper_wave=3.8,
                 upper_wave_phase=phase + 3.1,
-                hair_angle=3.8 * math.sin(phase - 1.0),
-                hair_wave=5.4,
+                hair_angle=2.6 * math.sin(phase - 1.0),
+                hair_wave=3.4,
                 hair_wave_phase=phase + 3.8,
             )
         )
@@ -818,7 +888,7 @@ def write_manifest(defs: list[SequenceDef]) -> None:
         "schema": 2,
         "characterId": "blue_girl_m1",
         "defaultAnimation": "idle_m8",
-        "assetBaseline": "rig_prototype_v5_drag_start",
+        "assetBaseline": "rig_prototype_v6_matched_drag_hold",
         "hitRegions": HIT_REGIONS,
         "animations": animations,
     }
@@ -1023,17 +1093,28 @@ def main() -> None:
     keyed = chroma_key_green(reference)
     character, bbox = fit_to_canvas(keyed)
     lower, upper, hair = make_layers(character, bbox)
+    root_pivot, neck_pivot = pivots_for_bbox(bbox)
 
-    x0, y0, x1, y1 = bbox
-    w, h = x1 - x0, y1 - y0
-    root_pivot = (x0 + w * 0.5, y0 + h * 0.82)
-    neck_pivot = (x0 + w * 0.50, y0 + h * 0.43)
+    drag_character, drag_bbox = load_drag_hold_character(character)
+    drag_lower, drag_upper, drag_hair = make_layers(drag_character, drag_bbox)
+    drag_root_pivot, drag_neck_pivot = pivots_for_bbox(drag_bbox)
 
     defs = sequence_defs()
-    sequences = {
-        spec.id: save_sequence(spec.id, spec.frames, lower, upper, hair, root_pivot, neck_pivot)
-        for spec in defs
-    }
+    sequences: dict[str, list[Image.Image]] = {}
+    for spec in defs:
+        if spec.id == "drag_hold":
+            sequences[spec.id] = save_sequence(
+                spec.id,
+                spec.frames,
+                drag_lower,
+                drag_upper,
+                drag_hair,
+                drag_root_pivot,
+                drag_neck_pivot,
+            )
+        else:
+            sequences[spec.id] = save_sequence(spec.id, spec.frames, lower, upper, hair, root_pivot, neck_pivot)
+
     write_manifest(defs)
     save_rig_diagnostics(reference, character, lower, upper, hair, bbox, root_pivot, neck_pivot)
     save_contact_sheet(sequences)
@@ -1041,6 +1122,8 @@ def main() -> None:
 
     print(f"Generated {len(sequences)} sheets for {sum(len(frames) for frames in sequences.values())} frames under {SHEET_ROOT}")
     print(f"Manifest: {ASSET_ROOT / 'animation-manifest.json'}")
+    print(f"Drag hold source: {DRAG_HOLD_SOURCE}")
+    print(f"Drag hold matched: {DRAG_HOLD_MATCHED}")
     print(f"Diagnostics: {ARTIFACT_ROOT / 'rig_diagnostics.png'}")
     print(f"Quality: {ARTIFACT_ROOT / 'rig_quality_report.json'}")
     print(f"Preview: {ARTIFACT_ROOT / 'rig_prototype_contact_sheet.png'}")

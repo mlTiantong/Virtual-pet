@@ -2,7 +2,7 @@
   "schema": 2,
   "characterId": "blue_girl_m1",
   "defaultAnimation": "idle_m8",
-  "assetBaseline": "rig_prototype_v5_drag_start",
+  "assetBaseline": "rig_prototype_v6_matched_drag_hold",
   "hitRegions": [
     {
       "id": "face",
