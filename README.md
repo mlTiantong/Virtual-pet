@@ -5,9 +5,9 @@
 当前美术资源处于 AI 骨骼实验模式：
 
 - `assets/reference/参考图.png` 是唯一保留的人物基础参考图。
-- `scripts/prototype-rig-actions.py` 会从参考图抠绿底，并用轻量分层/骨骼变换生成实验动作帧。
-- `assets/runtime/animations/` 保存当前生成的 `idle_m8`、`hover_m8`、`drag_hold`、`drop` 透明 PNG 序列帧。
-- `assets/animation-manifest.json` 已接入这些实验帧，同时保留 `reference_pose` 指向原始参考图。
+- `scripts/prototype-rig-actions.py` 会从参考图抠绿底，并用轻量分层、pivot 和局部弹性形变生成实验动作帧。
+- `assets/runtime/animations/` 保存当前生成的待机、悬停、拖拽、落地、摸头、点击反应、手部互动、学习、聊天、投喂和换装开心等透明 PNG 序列帧。
+- `assets/animation-manifest.json` 由生成脚本同步写入，同时保留 `reference_pose` 指向原始参考图。
 - `assets/motion-sequence.m8.json` 和 `assets/prop-manifest.m8.json` 保留为空壳，避免旧投喂道具引用。
 - 不统一的动作帧、SpriteSheet、预览图、道具图、服装/装饰图、旧绿幕源图和 contact sheet 均已移除。
 
@@ -25,7 +25,7 @@
 
 - WPF 透明无边框桌宠窗口。
 - PNG manifest 加载与实验序列帧播放。
-- 当前 `idle_m8`、`hover_m8`、`drag_hold`、`drop` 由 AI 骨骼实验脚本生成。
+- 当前动作由 AI 骨骼实验脚本生成，覆盖 `idle_m8`、`hover_m8`、`drag_hold`、`drop`、`pat_head_m8`、`face_reaction_m8`、`tap_annoyed`、`hand_invite_m8`、`study_guard_m8`、`talking`、`feed_snack`、`feed_meal`、`rest_tea`、`idle_cheer_m8`。
 - 透明像素 `WM_NCHITTEST` 穿透。
 - 整窗点击穿透开关，托盘菜单可恢复。
 - 鼠标悬停、点击、连续点击升级、拖拽、放下反馈。
@@ -76,7 +76,8 @@ src/DesktopPet.App/assets/
 │     ├─ idle_m8/
 │     ├─ hover_m8/
 │     ├─ drag_hold/
-│     └─ drop/
+│     ├─ drop/
+│     └─ ... generated action folders
 └─ dialogue/
 ```
 
@@ -88,10 +89,11 @@ src/DesktopPet.App/assets/
 python .\scripts\prototype-rig-actions.py
 ```
 
-脚本会重建 `assets/runtime/animations/`，并输出预览图到：
+脚本会重建 `assets/runtime/animations/`、同步写入 `assets/animation-manifest.json`，并输出预览图到：
 
 ```text
 artifacts\rig-prototype\rig_prototype_contact_sheet.png
+artifacts\rig-prototype\rig_diagnostics.png
 ```
 
 ## 资源检查

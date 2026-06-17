@@ -242,7 +242,7 @@
                 <TextBlock Text="已加载：" Foreground="#F2F8FF" FontWeight="SemiBold" FontSize="14" />
                 <TextBlock Text="AI 骨骼实验动作" Foreground="#7FB1FF" FontWeight="Bold" FontSize="14" />
               </StackPanel>
-              <TextBlock Text="当前由 reference/参考图.png 生成 idle、hover、drag、drop 实验帧。" Foreground="#C9D7EA" FontSize="12" Margin="28,0,0,12" TextWrapping="Wrap" />
+              <TextBlock Text="当前由 reference/参考图.png 生成多组实验帧。" Foreground="#C9D7EA" FontSize="12" Margin="28,0,0,12" TextWrapping="Wrap" />
             </StackPanel>
           </TabItem>
         </TabControl>

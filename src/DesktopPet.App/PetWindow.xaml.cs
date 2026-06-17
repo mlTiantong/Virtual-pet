@@ -73,7 +73,7 @@ public partial class PetWindow : Window
         InitializeComponent();
         _assetRoot = System.IO.Path.Combine(AppContext.BaseDirectory, "assets");
         _catalog = AnimationCatalog.Load(_assetRoot);
-        _catalog.Preload("idle", "idle_m8", "idle_blink", "hover_curious", "hover_shy", "hover_backstep", "hover_m8", "part_head_pat", "pat_head_m8", "part_face_pout", "part_face_blush", "face_reaction_m8", "part_hand_invite", "hand_invite_m8", "part_hand_highfive", "tap_annoyed", "drag_hold", "drop", "study_guard", "study_guard_m8", "study_complete", "feed_snack", "feed_meal", "rest_tea", "talking", "feed_snack_01_notice", "feed_snack_02_reach", "feed_snack_03_take", "feed_snack_04_eat", "feed_snack_05_happy", "feed_meal_01_notice", "feed_meal_02_reach", "feed_meal_03_take", "feed_meal_04_eat", "feed_meal_05_happy");
+        _catalog.Preload("idle_m8", "hover_m8", "drag_hold", "drop", "pat_head_m8", "face_reaction_m8", "tap_annoyed", "hand_invite_m8", "study_guard_m8", "talking");
         _hitTest = new HitTestService(_catalog.HitRegions);
         _dialogue = DialogueSelector.Load(System.IO.Path.Combine(_assetRoot, "dialogue", "blue-girl.zh-CN.json"));
         _propLayer = new PropLayerService(PropLayer, _assetRoot);
@@ -420,7 +420,7 @@ public partial class PetWindow : Window
         var roll = _random.NextDouble();
         if (_state.Energy < 30 && roll < 0.45)
         {
-            RunAction(new PetAction("idle_yawn", "idle.lowEnergy"));
+            RunAction(new PetAction("study_guard_m8", "idle.lowEnergy"));
             return;
         }
 
@@ -444,7 +444,7 @@ public partial class PetWindow : Window
             _studyRecordStore.Save(_studyRecord);
             SaveAll();
             UpdateStatusText();
-            RunAction(new PetAction("study_complete", "study.complete"));
+            RunAction(new PetAction("idle_cheer_m8", "study.complete"));
             return;
         }
 
@@ -465,7 +465,7 @@ public partial class PetWindow : Window
     private void PreviewIdle_Click(object sender, RoutedEventArgs e) => PlayAnimation("idle_m8", returnToIdle: false);
     private void PreviewDrag_Click(object sender, RoutedEventArgs e) => PlayAnimation("drag_hold", returnToIdle: false);
     private void PreviewThink_Click(object sender, RoutedEventArgs e) => PlayAnimation("study_guard_m8", returnToIdle: false);
-    private void PreviewWave_Click(object sender, RoutedEventArgs e) => PlayAnimation("part_hand_wave");
+    private void PreviewWave_Click(object sender, RoutedEventArgs e) => PlayAnimation("hand_invite_m8");
 
     private void PatButton_Click(object sender, RoutedEventArgs e) => HandleTap(PetHitRegion.Head);
     private void SnackButton_Click(object sender, RoutedEventArgs e) => Feed("snack");

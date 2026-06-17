@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import math
 import shutil
 from dataclasses import dataclass
@@ -19,6 +20,13 @@ CANVAS_SIZE = 768
 CHARACTER_HEIGHT = 690
 FOOT_Y = 742
 
+HIT_REGIONS = [
+    {"id": "face", "x": 0.36, "y": 0.18, "w": 0.28, "h": 0.18},
+    {"id": "head", "x": 0.22, "y": 0.02, "w": 0.56, "h": 0.35},
+    {"id": "hand", "x": 0.25, "y": 0.34, "w": 0.5, "h": 0.2},
+    {"id": "feet", "x": 0.36, "y": 0.74, "w": 0.28, "h": 0.23},
+]
+
 
 @dataclass(frozen=True)
 class RigFrame:
@@ -29,6 +37,10 @@ class RigFrame:
     lower_angle: float = 0
     lower_wave: float = 0
     lower_wave_phase: float = 0
+    lower_pull_x: float = 0
+    lower_pull_y: float = 0
+    lower_pull_focus_y: float = 0.72
+    lower_pull_radius: float = 0.72
     upper_dx: float = 0
     upper_dy: float = 0
     upper_sx: float = 1
@@ -36,6 +48,20 @@ class RigFrame:
     upper_angle: float = 0
     upper_wave: float = 0
     upper_wave_phase: float = 0
+    upper_pull_x: float = 0
+    upper_pull_y: float = 0
+    upper_pull_focus_y: float = 0.22
+    upper_pull_radius: float = 0.55
+
+
+@dataclass(frozen=True)
+class SequenceDef:
+    id: str
+    frames: list[RigFrame]
+    fps: int
+    loop: bool
+    duration_ms: int
+    return_to_idle: bool = True
 
 
 def chroma_key_green(image: Image.Image) -> Image.Image:
@@ -138,6 +164,57 @@ def transform_layer(
     )
 
 
+def bilinear_sample(arr: np.ndarray, src_x: np.ndarray, src_y: np.ndarray) -> np.ndarray:
+    height, width = arr.shape[:2]
+    valid = (src_x >= 0) & (src_x < width - 1) & (src_y >= 0) & (src_y < height - 1)
+
+    x0 = np.floor(np.clip(src_x, 0, width - 1)).astype(np.int32)
+    y0 = np.floor(np.clip(src_y, 0, height - 1)).astype(np.int32)
+    x1 = np.clip(x0 + 1, 0, width - 1)
+    y1 = np.clip(y0 + 1, 0, height - 1)
+
+    wx = (src_x - x0)[..., None]
+    wy = (src_y - y0)[..., None]
+
+    top = arr[y0, x0] * (1 - wx) + arr[y0, x1] * wx
+    bottom = arr[y1, x0] * (1 - wx) + arr[y1, x1] * wx
+    out = top * (1 - wy) + bottom * wy
+    out[~valid] = 0
+    return out
+
+
+def elastic_pull_layer(
+    layer: Image.Image,
+    pull_x: float,
+    pull_y: float,
+    focus_y: float,
+    radius: float,
+) -> Image.Image:
+    if abs(pull_x) < 0.01 and abs(pull_y) < 0.01:
+        return layer
+
+    bbox = layer.getchannel("A").getbbox()
+    if bbox is None:
+        return layer
+
+    x0, y0, x1, y1 = bbox
+    width = max(1, x1 - x0)
+    height = max(1, y1 - y0)
+    center_x = x0 + width * 0.5
+    center_y = y0 + height * focus_y
+    radius_x = max(1.0, width * 0.70)
+    radius_y = max(1.0, height * radius)
+
+    yy, xx = np.mgrid[0:CANVAS_SIZE, 0:CANVAS_SIZE].astype(np.float32)
+    distance = np.sqrt(((xx - center_x) / radius_x) ** 2 + ((yy - center_y) / radius_y) ** 2)
+    weight = np.clip(1.0 - distance, 0.0, 1.0) ** 2
+
+    src_x = xx - pull_x * weight
+    src_y = yy - pull_y * weight
+    sampled = bilinear_sample(np.array(layer).astype(np.float32), src_x, src_y)
+    return Image.fromarray(np.clip(sampled, 0, 255).astype(np.uint8), "RGBA")
+
+
 def wave_layer_horizontal(layer: Image.Image, amplitude: float, phase: float, power: float = 1.35) -> Image.Image:
     if abs(amplitude) < 0.01:
         return layer
@@ -186,6 +263,13 @@ def render_frame(
         dx=frame.lower_dx,
         dy=frame.lower_dy,
     )
+    lower_layer = elastic_pull_layer(
+        lower_layer,
+        frame.lower_pull_x,
+        frame.lower_pull_y,
+        frame.lower_pull_focus_y,
+        frame.lower_pull_radius,
+    )
     lower_layer = wave_layer_horizontal(lower_layer, frame.lower_wave, frame.lower_wave_phase, power=1.12)
     upper_layer = transform_layer(
         upper,
@@ -195,6 +279,13 @@ def render_frame(
         center=neck_pivot,
         dx=frame.upper_dx,
         dy=frame.upper_dy,
+    )
+    upper_layer = elastic_pull_layer(
+        upper_layer,
+        frame.upper_pull_x,
+        frame.upper_pull_y,
+        frame.upper_pull_focus_y,
+        frame.upper_pull_radius,
     )
     upper_layer = wave_layer_horizontal(upper_layer, frame.upper_wave, frame.upper_wave_phase, power=1.45)
     canvas.alpha_composite(lower_layer)
@@ -306,6 +397,250 @@ def drop_frames() -> list[RigFrame]:
     return frames
 
 
+def pat_head_frames(count: int) -> list[RigFrame]:
+    frames: list[RigFrame] = []
+    for i in range(count):
+        t = i / max(1, count - 1)
+        press = math.sin(math.pi * t)
+        rebound = math.sin(math.tau * t) * (1.0 - t)
+        frames.append(
+            RigFrame(
+                lower_dy=1.2 * press,
+                lower_sy=1.0 - 0.004 * press,
+                upper_dy=7.0 * press - 2.0 * rebound,
+                upper_sx=1.0 + 0.018 * press,
+                upper_sy=1.0 - 0.036 * press + 0.008 * max(0.0, -rebound),
+                upper_angle=0.8 * math.sin(math.tau * t),
+                upper_pull_y=8.0 * press,
+                upper_pull_focus_y=0.10,
+                upper_pull_radius=0.42,
+                upper_wave=5.0 * press,
+                upper_wave_phase=t * math.tau + 0.9,
+            )
+        )
+    return frames
+
+
+def face_reaction_frames(count: int) -> list[RigFrame]:
+    frames: list[RigFrame] = []
+    for i in range(count):
+        t = i / max(1, count - 1)
+        envelope = math.sin(math.pi * t)
+        side = math.sin(math.tau * t * 1.25)
+        frames.append(
+            RigFrame(
+                lower_dx=1.5 * side * envelope,
+                upper_dx=7.0 * side * envelope,
+                upper_angle=-2.6 * side * envelope,
+                upper_pull_x=7.0 * side * envelope,
+                upper_pull_focus_y=0.28,
+                upper_pull_radius=0.50,
+                upper_wave=3.6 * envelope,
+                upper_wave_phase=t * math.tau + 1.4,
+            )
+        )
+    return frames
+
+
+def tap_annoyed_frames(count: int) -> list[RigFrame]:
+    frames: list[RigFrame] = []
+    for i in range(count):
+        t = i / max(1, count - 1)
+        fade = 1.0 - t
+        shake = math.sin(math.tau * t * 4.0) * fade
+        frames.append(
+            RigFrame(
+                lower_dx=3.0 * shake,
+                lower_angle=0.9 * shake,
+                lower_wave=2.0 * fade,
+                lower_wave_phase=t * math.tau + 0.4,
+                upper_dx=8.0 * shake,
+                upper_angle=-3.5 * shake,
+                upper_pull_x=6.0 * shake,
+                upper_pull_focus_y=0.25,
+                upper_wave=5.0 * fade,
+                upper_wave_phase=t * math.tau + 2.0,
+            )
+        )
+    return frames
+
+
+def hand_invite_frames(count: int) -> list[RigFrame]:
+    frames: list[RigFrame] = []
+    for i in range(count):
+        phase = math.tau * i / count
+        wave = math.sin(phase * 2.0)
+        breath = math.sin(phase)
+        frames.append(
+            RigFrame(
+                lower_dx=1.5 * wave,
+                lower_dy=-2.0 * breath,
+                lower_angle=0.7 * wave,
+                lower_wave=2.0,
+                lower_wave_phase=phase + 1.2,
+                upper_dx=4.5 * wave,
+                upper_dy=-4.0 - 2.0 * breath,
+                upper_angle=2.8 * wave,
+                upper_pull_x=5.0 * wave,
+                upper_pull_focus_y=0.44,
+                upper_pull_radius=0.42,
+                upper_wave=4.8,
+                upper_wave_phase=phase + 2.0,
+            )
+        )
+    return frames
+
+
+def study_guard_frames(count: int) -> list[RigFrame]:
+    frames: list[RigFrame] = []
+    for i in range(count):
+        phase = math.tau * i / count
+        breath = math.sin(phase)
+        frames.append(
+            RigFrame(
+                lower_dy=-2.8 * breath,
+                lower_sx=1.0 - 0.002 * breath,
+                lower_sy=1.0 + 0.004 * breath,
+                lower_wave=0.7,
+                lower_wave_phase=phase + 0.2,
+                upper_dy=-4.0 * breath,
+                upper_angle=0.35 * math.sin(phase + 0.8),
+                upper_wave=1.2,
+                upper_wave_phase=phase + 0.9,
+            )
+        )
+    return frames
+
+
+def talking_frames(count: int) -> list[RigFrame]:
+    frames: list[RigFrame] = []
+    for i in range(count):
+        t = i / max(1, count - 1)
+        syllable = math.sin(math.tau * t * 3.0)
+        envelope = math.sin(math.pi * t)
+        frames.append(
+            RigFrame(
+                lower_dy=-1.0 * envelope,
+                upper_dy=-4.0 * envelope - 1.6 * syllable,
+                upper_sx=1.0 + 0.005 * max(0.0, syllable),
+                upper_sy=1.0 - 0.006 * max(0.0, syllable),
+                upper_angle=0.7 * math.sin(math.tau * t),
+                upper_wave=2.0 * envelope,
+                upper_wave_phase=t * math.tau + 1.0,
+            )
+        )
+    return frames
+
+
+def feed_snack_frames(count: int) -> list[RigFrame]:
+    frames: list[RigFrame] = []
+    for i in range(count):
+        t = i / max(1, count - 1)
+        hop = max(0.0, math.sin(math.pi * t * 2.0))
+        settle = math.sin(math.pi * t)
+        frames.append(
+            RigFrame(
+                lower_dy=-8.0 * hop + 3.0 * settle,
+                lower_sx=1.0 + 0.010 * settle,
+                lower_sy=1.0 - 0.016 * settle,
+                lower_wave=2.0 * settle,
+                lower_wave_phase=t * math.tau + 1.5,
+                upper_dy=-11.0 * hop + 2.0 * settle,
+                upper_angle=1.6 * math.sin(math.tau * t),
+                upper_wave=4.0 * settle,
+                upper_wave_phase=t * math.tau + 2.0,
+            )
+        )
+    return frames
+
+
+def feed_meal_frames(count: int) -> list[RigFrame]:
+    frames: list[RigFrame] = []
+    for i in range(count):
+        t = i / max(1, count - 1)
+        nod = math.sin(math.pi * t)
+        settle = math.sin(math.tau * t * 1.5) * (1.0 - t)
+        frames.append(
+            RigFrame(
+                lower_dy=3.0 * nod - 2.0 * settle,
+                lower_sx=1.0 + 0.012 * nod,
+                lower_sy=1.0 - 0.018 * nod,
+                upper_dy=5.0 * nod - 3.0 * settle,
+                upper_sx=1.0 + 0.010 * nod,
+                upper_sy=1.0 - 0.014 * nod,
+                upper_angle=1.2 * settle,
+                upper_wave=2.8 * nod,
+                upper_wave_phase=t * math.tau + 1.7,
+            )
+        )
+    return frames
+
+
+def rest_tea_frames(count: int) -> list[RigFrame]:
+    frames: list[RigFrame] = []
+    for i in range(count):
+        phase = math.tau * i / count
+        calm = math.sin(phase)
+        frames.append(
+            RigFrame(
+                lower_dy=2.0 + 2.0 * calm,
+                lower_sx=1.0 + 0.004 * calm,
+                lower_sy=1.0 - 0.006 * calm,
+                lower_wave=0.8,
+                lower_wave_phase=phase + 0.6,
+                upper_dy=3.0 + 3.0 * calm,
+                upper_angle=0.9 * math.sin(phase + 0.9),
+                upper_wave=1.6,
+                upper_wave_phase=phase + 1.2,
+            )
+        )
+    return frames
+
+
+def idle_cheer_frames(count: int) -> list[RigFrame]:
+    frames: list[RigFrame] = []
+    for i in range(count):
+        t = i / max(1, count - 1)
+        hop = max(0.0, math.sin(math.pi * t * 2.0))
+        side = math.sin(math.tau * t)
+        frames.append(
+            RigFrame(
+                lower_dy=-12.0 * hop,
+                lower_sx=1.0 - 0.006 * hop,
+                lower_sy=1.0 + 0.012 * hop,
+                lower_angle=1.2 * side,
+                lower_wave=2.8 * hop,
+                lower_wave_phase=t * math.tau + 0.8,
+                upper_dy=-16.0 * hop,
+                upper_angle=3.2 * side,
+                upper_pull_x=5.0 * side * hop,
+                upper_pull_focus_y=0.36,
+                upper_wave=6.0 * hop,
+                upper_wave_phase=t * math.tau + 1.4,
+            )
+        )
+    return frames
+
+
+def sequence_defs() -> list[SequenceDef]:
+    return [
+        SequenceDef("idle_m8", idle_frames(16), fps=8, loop=True, duration_ms=0, return_to_idle=False),
+        SequenceDef("hover_m8", hover_frames(12), fps=10, loop=False, duration_ms=1200),
+        SequenceDef("drag_hold", drag_hold_frames(12), fps=10, loop=True, duration_ms=0, return_to_idle=False),
+        SequenceDef("drop", drop_frames(), fps=12, loop=False, duration_ms=1000),
+        SequenceDef("pat_head_m8", pat_head_frames(8), fps=12, loop=False, duration_ms=700),
+        SequenceDef("face_reaction_m8", face_reaction_frames(8), fps=12, loop=False, duration_ms=700),
+        SequenceDef("tap_annoyed", tap_annoyed_frames(8), fps=12, loop=False, duration_ms=700),
+        SequenceDef("hand_invite_m8", hand_invite_frames(10), fps=10, loop=False, duration_ms=1000),
+        SequenceDef("study_guard_m8", study_guard_frames(16), fps=8, loop=True, duration_ms=0, return_to_idle=False),
+        SequenceDef("talking", talking_frames(8), fps=12, loop=False, duration_ms=700),
+        SequenceDef("feed_snack", feed_snack_frames(8), fps=12, loop=False, duration_ms=700),
+        SequenceDef("feed_meal", feed_meal_frames(8), fps=12, loop=False, duration_ms=700),
+        SequenceDef("rest_tea", rest_tea_frames(10), fps=10, loop=False, duration_ms=1000),
+        SequenceDef("idle_cheer_m8", idle_cheer_frames(10), fps=12, loop=False, duration_ms=850),
+    ]
+
+
 def save_sequence(
     name: str,
     specs: list[RigFrame],
@@ -319,9 +654,103 @@ def save_sequence(
     frames: list[Image.Image] = []
     for idx, spec in enumerate(specs):
         frame = render_frame(lower, upper, spec, root_pivot, neck_pivot)
-        frame.save(out_dir / f"{idx:03d}.png")
+        frame.save(out_dir / f"{idx:03d}.png", optimize=True, compress_level=9)
         frames.append(frame)
     return frames
+
+
+def frame_paths(name: str, count: int) -> list[str]:
+    return [f"runtime/animations/{name}/{idx:03d}.png" for idx in range(count)]
+
+
+def write_manifest(defs: list[SequenceDef]) -> None:
+    animations: dict[str, object] = {
+        "reference_pose": {
+            "id": "reference_pose",
+            "type": "frames",
+            "fps": 1,
+            "loop": False,
+            "durationMs": 1000,
+            "returnToIdle": False,
+            "frames": ["reference/参考图.png"],
+        }
+    }
+
+    for spec in defs:
+        animations[spec.id] = {
+            "id": spec.id,
+            "type": "frames",
+            "fps": spec.fps,
+            "loop": spec.loop,
+            "durationMs": spec.duration_ms,
+            "returnToIdle": spec.return_to_idle,
+            "frames": frame_paths(spec.id, len(spec.frames)),
+        }
+
+    manifest = {
+        "schema": 2,
+        "characterId": "blue_girl_m1",
+        "defaultAnimation": "idle_m8",
+        "assetBaseline": "rig_prototype_v2",
+        "hitRegions": HIT_REGIONS,
+        "animations": animations,
+    }
+    (ASSET_ROOT / "animation-manifest.json").write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+
+def preview_tile(image: Image.Image, label: str, size: int = 180) -> Image.Image:
+    label_h = 26
+    tile = Image.new("RGBA", (size, size + label_h), (28, 32, 42, 255))
+    preview = Image.new("RGBA", (size, size), (42, 46, 58, 255))
+    thumb = image.resize((size, size), Image.Resampling.LANCZOS)
+    preview.alpha_composite(thumb)
+    tile.alpha_composite(preview, (0, 0))
+    ImageDraw.Draw(tile).text((8, size + 6), label, fill=(228, 236, 255, 255))
+    return tile
+
+
+def save_rig_diagnostics(
+    reference: Image.Image,
+    character: Image.Image,
+    lower: Image.Image,
+    upper: Image.Image,
+    bbox: tuple[int, int, int, int],
+    root_pivot: tuple[float, float],
+    neck_pivot: tuple[float, float],
+) -> None:
+    ARTIFACT_ROOT.mkdir(parents=True, exist_ok=True)
+    overlay = character.copy()
+    draw = ImageDraw.Draw(overlay)
+    x0, y0, x1, y1 = bbox
+    draw.rectangle((x0, y0, x1, y1), outline=(120, 190, 255, 220), width=3)
+    draw.line((root_pivot[0], root_pivot[1], neck_pivot[0], neck_pivot[1]), fill=(255, 205, 95, 240), width=5)
+    for x, y, color in (
+        (root_pivot[0], root_pivot[1], (255, 120, 96, 255)),
+        (neck_pivot[0], neck_pivot[1], (96, 220, 255, 255)),
+    ):
+        draw.ellipse((x - 10, y - 10, x + 10, y + 10), fill=color)
+
+    tiles = [
+        preview_tile(reference.convert("RGBA"), "reference"),
+        preview_tile(character, "keyed fit"),
+        preview_tile(upper, "upper layer"),
+        preview_tile(lower, "lower layer"),
+        preview_tile(overlay, "rig pivots"),
+    ]
+    gap = 14
+    sheet = Image.new(
+        "RGBA",
+        (gap + len(tiles) * (tiles[0].width + gap), tiles[0].height + gap * 2),
+        (16, 20, 28, 255),
+    )
+    x = gap
+    for tile in tiles:
+        sheet.alpha_composite(tile, (x, gap))
+        x += tile.width + gap
+    sheet.convert("RGB").save(ARTIFACT_ROOT / "rig_diagnostics.png")
 
 
 def save_contact_sheet(sequences: dict[str, list[Image.Image]]) -> None:
@@ -359,7 +788,8 @@ def main() -> None:
         shutil.rmtree(OUT_ROOT)
     OUT_ROOT.mkdir(parents=True, exist_ok=True)
 
-    keyed = chroma_key_green(Image.open(REFERENCE))
+    reference = Image.open(REFERENCE)
+    keyed = chroma_key_green(reference)
     character, bbox = fit_to_canvas(keyed)
     lower, upper = make_layers(character, bbox)
 
@@ -368,15 +798,18 @@ def main() -> None:
     root_pivot = (x0 + w * 0.5, y0 + h * 0.82)
     neck_pivot = (x0 + w * 0.50, y0 + h * 0.43)
 
+    defs = sequence_defs()
     sequences = {
-        "idle_m8": save_sequence("idle_m8", idle_frames(16), lower, upper, root_pivot, neck_pivot),
-        "hover_m8": save_sequence("hover_m8", hover_frames(12), lower, upper, root_pivot, neck_pivot),
-        "drag_hold": save_sequence("drag_hold", drag_hold_frames(12), lower, upper, root_pivot, neck_pivot),
-        "drop": save_sequence("drop", drop_frames(), lower, upper, root_pivot, neck_pivot),
+        spec.id: save_sequence(spec.id, spec.frames, lower, upper, root_pivot, neck_pivot)
+        for spec in defs
     }
+    write_manifest(defs)
+    save_rig_diagnostics(reference, character, lower, upper, bbox, root_pivot, neck_pivot)
     save_contact_sheet(sequences)
 
     print(f"Generated {sum(len(frames) for frames in sequences.values())} frames under {OUT_ROOT}")
+    print(f"Manifest: {ASSET_ROOT / 'animation-manifest.json'}")
+    print(f"Diagnostics: {ARTIFACT_ROOT / 'rig_diagnostics.png'}")
     print(f"Preview: {ARTIFACT_ROOT / 'rig_prototype_contact_sheet.png'}")
 
 

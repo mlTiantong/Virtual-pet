@@ -2,7 +2,7 @@
   "schema": 2,
   "characterId": "blue_girl_m1",
   "defaultAnimation": "idle_m8",
-  "assetBaseline": "rig_prototype_v1",
+  "assetBaseline": "rig_prototype_v2",
   "hitRegions": [
     {
       "id": "face",
@@ -135,6 +135,200 @@
         "runtime/animations/drop/009.png",
         "runtime/animations/drop/010.png",
         "runtime/animations/drop/011.png"
+      ]
+    },
+    "pat_head_m8": {
+      "id": "pat_head_m8",
+      "type": "frames",
+      "fps": 12,
+      "loop": false,
+      "durationMs": 700,
+      "returnToIdle": true,
+      "frames": [
+        "runtime/animations/pat_head_m8/000.png",
+        "runtime/animations/pat_head_m8/001.png",
+        "runtime/animations/pat_head_m8/002.png",
+        "runtime/animations/pat_head_m8/003.png",
+        "runtime/animations/pat_head_m8/004.png",
+        "runtime/animations/pat_head_m8/005.png",
+        "runtime/animations/pat_head_m8/006.png",
+        "runtime/animations/pat_head_m8/007.png"
+      ]
+    },
+    "face_reaction_m8": {
+      "id": "face_reaction_m8",
+      "type": "frames",
+      "fps": 12,
+      "loop": false,
+      "durationMs": 700,
+      "returnToIdle": true,
+      "frames": [
+        "runtime/animations/face_reaction_m8/000.png",
+        "runtime/animations/face_reaction_m8/001.png",
+        "runtime/animations/face_reaction_m8/002.png",
+        "runtime/animations/face_reaction_m8/003.png",
+        "runtime/animations/face_reaction_m8/004.png",
+        "runtime/animations/face_reaction_m8/005.png",
+        "runtime/animations/face_reaction_m8/006.png",
+        "runtime/animations/face_reaction_m8/007.png"
+      ]
+    },
+    "tap_annoyed": {
+      "id": "tap_annoyed",
+      "type": "frames",
+      "fps": 12,
+      "loop": false,
+      "durationMs": 700,
+      "returnToIdle": true,
+      "frames": [
+        "runtime/animations/tap_annoyed/000.png",
+        "runtime/animations/tap_annoyed/001.png",
+        "runtime/animations/tap_annoyed/002.png",
+        "runtime/animations/tap_annoyed/003.png",
+        "runtime/animations/tap_annoyed/004.png",
+        "runtime/animations/tap_annoyed/005.png",
+        "runtime/animations/tap_annoyed/006.png",
+        "runtime/animations/tap_annoyed/007.png"
+      ]
+    },
+    "hand_invite_m8": {
+      "id": "hand_invite_m8",
+      "type": "frames",
+      "fps": 10,
+      "loop": false,
+      "durationMs": 1000,
+      "returnToIdle": true,
+      "frames": [
+        "runtime/animations/hand_invite_m8/000.png",
+        "runtime/animations/hand_invite_m8/001.png",
+        "runtime/animations/hand_invite_m8/002.png",
+        "runtime/animations/hand_invite_m8/003.png",
+        "runtime/animations/hand_invite_m8/004.png",
+        "runtime/animations/hand_invite_m8/005.png",
+        "runtime/animations/hand_invite_m8/006.png",
+        "runtime/animations/hand_invite_m8/007.png",
+        "runtime/animations/hand_invite_m8/008.png",
+        "runtime/animations/hand_invite_m8/009.png"
+      ]
+    },
+    "study_guard_m8": {
+      "id": "study_guard_m8",
+      "type": "frames",
+      "fps": 8,
+      "loop": true,
+      "durationMs": 0,
+      "returnToIdle": false,
+      "frames": [
+        "runtime/animations/study_guard_m8/000.png",
+        "runtime/animations/study_guard_m8/001.png",
+        "runtime/animations/study_guard_m8/002.png",
+        "runtime/animations/study_guard_m8/003.png",
+        "runtime/animations/study_guard_m8/004.png",
+        "runtime/animations/study_guard_m8/005.png",
+        "runtime/animations/study_guard_m8/006.png",
+        "runtime/animations/study_guard_m8/007.png",
+        "runtime/animations/study_guard_m8/008.png",
+        "runtime/animations/study_guard_m8/009.png",
+        "runtime/animations/study_guard_m8/010.png",
+        "runtime/animations/study_guard_m8/011.png",
+        "runtime/animations/study_guard_m8/012.png",
+        "runtime/animations/study_guard_m8/013.png",
+        "runtime/animations/study_guard_m8/014.png",
+        "runtime/animations/study_guard_m8/015.png"
+      ]
+    },
+    "talking": {
+      "id": "talking",
+      "type": "frames",
+      "fps": 12,
+      "loop": false,
+      "durationMs": 700,
+      "returnToIdle": true,
+      "frames": [
+        "runtime/animations/talking/000.png",
+        "runtime/animations/talking/001.png",
+        "runtime/animations/talking/002.png",
+        "runtime/animations/talking/003.png",
+        "runtime/animations/talking/004.png",
+        "runtime/animations/talking/005.png",
+        "runtime/animations/talking/006.png",
+        "runtime/animations/talking/007.png"
+      ]
+    },
+    "feed_snack": {
+      "id": "feed_snack",
+      "type": "frames",
+      "fps": 12,
+      "loop": false,
+      "durationMs": 700,
+      "returnToIdle": true,
+      "frames": [
+        "runtime/animations/feed_snack/000.png",
+        "runtime/animations/feed_snack/001.png",
+        "runtime/animations/feed_snack/002.png",
+        "runtime/animations/feed_snack/003.png",
+        "runtime/animations/feed_snack/004.png",
+        "runtime/animations/feed_snack/005.png",
+        "runtime/animations/feed_snack/006.png",
+        "runtime/animations/feed_snack/007.png"
+      ]
+    },
+    "feed_meal": {
+      "id": "feed_meal",
+      "type": "frames",
+      "fps": 12,
+      "loop": false,
+      "durationMs": 700,
+      "returnToIdle": true,
+      "frames": [
+        "runtime/animations/feed_meal/000.png",
+        "runtime/animations/feed_meal/001.png",
+        "runtime/animations/feed_meal/002.png",
+        "runtime/animations/feed_meal/003.png",
+        "runtime/animations/feed_meal/004.png",
+        "runtime/animations/feed_meal/005.png",
+        "runtime/animations/feed_meal/006.png",
+        "runtime/animations/feed_meal/007.png"
+      ]
+    },
+    "rest_tea": {
+      "id": "rest_tea",
+      "type": "frames",
+      "fps": 10,
+      "loop": false,
+      "durationMs": 1000,
+      "returnToIdle": true,
+      "frames": [
+        "runtime/animations/rest_tea/000.png",
+        "runtime/animations/rest_tea/001.png",
+        "runtime/animations/rest_tea/002.png",
+        "runtime/animations/rest_tea/003.png",
+        "runtime/animations/rest_tea/004.png",
+        "runtime/animations/rest_tea/005.png",
+        "runtime/animations/rest_tea/006.png",
+        "runtime/animations/rest_tea/007.png",
+        "runtime/animations/rest_tea/008.png",
+        "runtime/animations/rest_tea/009.png"
+      ]
+    },
+    "idle_cheer_m8": {
+      "id": "idle_cheer_m8",
+      "type": "frames",
+      "fps": 12,
+      "loop": false,
+      "durationMs": 850,
+      "returnToIdle": true,
+      "frames": [
+        "runtime/animations/idle_cheer_m8/000.png",
+        "runtime/animations/idle_cheer_m8/001.png",
+        "runtime/animations/idle_cheer_m8/002.png",
+        "runtime/animations/idle_cheer_m8/003.png",
+        "runtime/animations/idle_cheer_m8/004.png",
+        "runtime/animations/idle_cheer_m8/005.png",
+        "runtime/animations/idle_cheer_m8/006.png",
+        "runtime/animations/idle_cheer_m8/007.png",
+        "runtime/animations/idle_cheer_m8/008.png",
+        "runtime/animations/idle_cheer_m8/009.png"
       ]
     }
   }
