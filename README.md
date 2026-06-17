@@ -87,6 +87,29 @@ art_sources/
    └─ drag_hold_source.png
 ```
 
+## AI 图片处理流程
+
+`src/DesktopPet.App/ai 绘画/` 是临时投喂目录，已在 `.gitignore` 中忽略，不直接作为运行资源提交。新图先放这里，确认可用后再复制到 `art_sources/actions/` 作为正式动作源。
+
+接入一张新动作图时按这个顺序处理：
+
+1. 先只处理一个动作，避免姿态、比例和触发逻辑混在一起。
+2. 检查图片是否为透明 PNG、四角 alpha 是否为 0、人物是否全身完整、头发和鞋子是否没有裁切。
+3. 和 `src/DesktopPet.App/assets/reference/参考图.png` 对比角色一致性：发型、发色、眼睛、服装、裙摆大小、腿长、头身比例必须接近；如果比例明显不一致，先不要接入。
+4. 适合接入后，把图片复制到 `art_sources/actions/<action>_source.png`；不要放进 `src/DesktopPet.App/assets/reference/`，该目录只保留唯一基础参考图。
+5. 在 `scripts/prototype-rig-actions.py` 中为该动作添加或复用动作源加载逻辑，让脚本负责缩放、按参考图校色、alpha 加固和 spritesheet 生成。
+6. 运行 `python .\scripts\prototype-rig-actions.py`，检查 `artifacts\rig-prototype\*_matched.png` 和 `rig_prototype_contact_sheet.png`。
+7. 检查 `rig_quality_report.json`，重点看 `cornerAlphaMax` 是否为 0、`normalizedAlphaLossPctMax` 是否低于阈值。
+8. 运行 `.\scripts\validate-assets.ps1` 和 `dotnet build .\DesktopPet.M1.sln -c Release`。
+9. 运行项目实测动作切换、透明穿透、背景透色和比例一致性。
+
+经验规则：
+
+- 拖拽、坐下、趴下等大姿态可以用外部动作源图；待机、轻微呼吸、普通 hover 优先继续从基础参考图变形。
+- 动作源图本身已经有大幅头发或身体流向时，脚本里的 `hair_wave`、`upper_wave`、`lower_wave` 要收小，否则容易出现拉扯变形。
+- 透明桌宠会显示背后的窗口内容，所以生成帧会把主体 alpha 加固为不透明，只保留边缘抗锯齿透明。
+- 表情好但腿长、裙摆大小或身体比例不一致的图不能直接接入；宁可重画，也不要让动作之间出现“换人感”。
+
 ## 生成实验动作
 
 运行：

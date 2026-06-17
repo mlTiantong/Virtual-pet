@@ -4,6 +4,9 @@
 artifacts/
 TestResults/
 
+# Temporary AI art input
+/src/DesktopPet.App/ai */
+
 # IDE and editor state
 .vs/
 .vscode/
