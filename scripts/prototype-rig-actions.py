@@ -15,12 +15,10 @@ ASSET_ROOT = ROOT / "src" / "DesktopPet.App" / "assets"
 REFERENCE = ASSET_ROOT / "reference" / "参考图.png"
 ACTION_SOURCE_ROOT = ROOT / "art_sources" / "actions"
 DRAG_HOLD_SOURCE = ACTION_SOURCE_ROOT / "drag_hold_source.png"
-IDLE_CHEER_SOURCE = ACTION_SOURCE_ROOT / "idle_cheer_source.png"
 RUNTIME_ROOT = ASSET_ROOT / "runtime"
 SHEET_ROOT = RUNTIME_ROOT / "sheets"
 ARTIFACT_ROOT = ROOT / "artifacts" / "rig-prototype"
 DRAG_HOLD_MATCHED = ARTIFACT_ROOT / "drag_hold_matched.png"
-IDLE_CHEER_MATCHED = ARTIFACT_ROOT / "idle_cheer_matched.png"
 
 CANVAS_SIZE = 768
 CHARACTER_HEIGHT = 690
@@ -206,14 +204,6 @@ def load_drag_hold_character(reference_character: Image.Image) -> tuple[Image.Im
         target_height=DRAG_HOLD_CHARACTER_HEIGHT,
         max_width=DRAG_HOLD_MAX_WIDTH,
         foot_y=DRAG_HOLD_FOOT_Y,
-    )
-
-
-def load_idle_cheer_character(reference_character: Image.Image) -> tuple[Image.Image, tuple[int, int, int, int]]:
-    return load_action_character(
-        IDLE_CHEER_SOURCE,
-        IDLE_CHEER_MATCHED,
-        reference_character,
     )
 
 
@@ -822,20 +812,20 @@ def idle_cheer_frames(count: int) -> list[RigFrame]:
         side = math.sin(math.tau * t)
         frames.append(
             RigFrame(
-                lower_dy=-9.0 * hop,
-                lower_sx=1.0 - 0.004 * hop,
-                lower_sy=1.0 + 0.008 * hop,
-                lower_angle=0.7 * side,
-                lower_wave=1.0 * hop,
+                lower_dy=-12.0 * hop,
+                lower_sx=1.0 - 0.006 * hop,
+                lower_sy=1.0 + 0.012 * hop,
+                lower_angle=1.2 * side,
+                lower_wave=2.8 * hop,
                 lower_wave_phase=t * math.tau + 0.8,
-                upper_dy=-11.0 * hop,
-                upper_angle=1.5 * side,
-                upper_pull_x=2.5 * side * hop,
+                upper_dy=-16.0 * hop,
+                upper_angle=3.2 * side,
+                upper_pull_x=5.0 * side * hop,
                 upper_pull_focus_y=0.36,
-                upper_wave=1.6 * hop,
+                upper_wave=6.0 * hop,
                 upper_wave_phase=t * math.tau + 1.4,
-                hair_angle=1.8 * side * hop,
-                hair_wave=1.5 * hop,
+                hair_angle=3.6 * side * hop,
+                hair_wave=5.2 * hop,
                 hair_wave_phase=t * math.tau + 2.3,
             )
         )
@@ -932,7 +922,7 @@ def write_manifest(defs: list[SequenceDef]) -> None:
         "schema": 2,
         "characterId": "blue_girl_m1",
         "defaultAnimation": "idle_m8",
-        "assetBaseline": "rig_prototype_v8_happy_cheer",
+        "assetBaseline": "rig_prototype_v7_prone_drag_hold",
         "hitRegions": HIT_REGIONS,
         "animations": animations,
     }
@@ -1143,10 +1133,6 @@ def main() -> None:
     drag_lower, drag_upper, drag_hair = make_layers(drag_character, drag_bbox)
     drag_root_pivot, drag_neck_pivot = pivots_for_bbox(drag_bbox)
 
-    cheer_character, cheer_bbox = load_idle_cheer_character(character)
-    cheer_lower, cheer_upper, cheer_hair = make_layers(cheer_character, cheer_bbox)
-    cheer_root_pivot, cheer_neck_pivot = pivots_for_bbox(cheer_bbox)
-
     defs = sequence_defs()
     sequences: dict[str, list[Image.Image]] = {}
     for spec in defs:
@@ -1160,16 +1146,6 @@ def main() -> None:
                 drag_root_pivot,
                 drag_neck_pivot,
             )
-        elif spec.id == "idle_cheer_m8":
-            sequences[spec.id] = save_sequence(
-                spec.id,
-                spec.frames,
-                cheer_lower,
-                cheer_upper,
-                cheer_hair,
-                cheer_root_pivot,
-                cheer_neck_pivot,
-            )
         else:
             sequences[spec.id] = save_sequence(spec.id, spec.frames, lower, upper, hair, root_pivot, neck_pivot)
 
@@ -1182,8 +1158,6 @@ def main() -> None:
     print(f"Manifest: {ASSET_ROOT / 'animation-manifest.json'}")
     print(f"Drag hold source: {DRAG_HOLD_SOURCE}")
     print(f"Drag hold matched: {DRAG_HOLD_MATCHED}")
-    print(f"Idle cheer source: {IDLE_CHEER_SOURCE}")
-    print(f"Idle cheer matched: {IDLE_CHEER_MATCHED}")
     print(f"Diagnostics: {ARTIFACT_ROOT / 'rig_diagnostics.png'}")
     print(f"Quality: {ARTIFACT_ROOT / 'rig_quality_report.json'}")
     print(f"Preview: {ARTIFACT_ROOT / 'rig_prototype_contact_sheet.png'}")

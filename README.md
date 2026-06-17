@@ -6,7 +6,6 @@
 
 - `assets/reference/参考图.png` 是唯一保留的人物基础参考图。
 - `art_sources/actions/drag_hold_source.png` 是当前拖拽保持动作的 AI 姿态源图；生成脚本会自行缩放并按基础参考图校色。
-- `art_sources/actions/idle_cheer_source.png` 是当前开心/庆祝动作的 AI 姿态源图；生成脚本会自行缩放并按基础参考图校色。
 - `scripts/prototype-rig-actions.py` 会从参考图抠绿底，并用上身/下身/侧发轻量分层、pivot 和局部弹性形变生成实验动作帧。
 - `assets/runtime/sheets/` 保存当前生成的待机、悬停、拖拽起手、拖拽保持、落地、摸头、点击反应、手部互动、学习、聊天、投喂和换装开心等透明 PNG spritesheet。
 - `assets/animation-manifest.json` 由生成脚本同步写入，同时保留 `reference_pose` 指向原始参考图。
@@ -85,8 +84,7 @@ src/DesktopPet.App/assets/
 
 art_sources/
 └─ actions/
-   ├─ drag_hold_source.png
-   └─ idle_cheer_source.png
+   └─ drag_hold_source.png
 ```
 
 ## 生成实验动作
@@ -101,7 +99,6 @@ python .\scripts\prototype-rig-actions.py
 
 ```text
 artifacts\rig-prototype\drag_hold_matched.png
-artifacts\rig-prototype\idle_cheer_matched.png
 artifacts\rig-prototype\rig_prototype_contact_sheet.png
 artifacts\rig-prototype\rig_diagnostics.png
 artifacts\rig-prototype\rig_quality_report.json
