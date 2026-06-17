@@ -6,6 +6,7 @@ $manifestPath = Join-Path $assetRoot "animation-manifest.json"
 $propManifestPath = Join-Path $assetRoot "prop-manifest.m8.json"
 $motionSeqPath = Join-Path $assetRoot "motion-sequence.m8.json"
 $xamlPath = Join-Path $projectRoot "src\DesktopPet.App\PetWindow.xaml"
+$allowedReferenceImage = "reference$([System.IO.Path]::DirectorySeparatorChar)character_reference.png"
 
 if (!(Test-Path $manifestPath)) { throw "Missing animation-manifest.json" }
 
@@ -110,9 +111,20 @@ $allImages = Get-ChildItem $assetRoot -Recurse -File |
 $unreferenced = New-Object System.Collections.Generic.List[string]
 foreach ($image in $allImages) {
     $relative = Get-AssetRelativePath $image.FullName
+    if ($relative -ne $allowedReferenceImage) {
+        $missing.Add("non-reference image -> $relative")
+    }
     if (-not $usedImages.Contains($relative)) {
         $unreferenced.Add($relative)
     }
+}
+
+if ($allImages.Count -ne 1) {
+    $missing.Add("expected exactly one image asset, found $($allImages.Count)")
+}
+
+if (-not $usedImages.Contains($allowedReferenceImage)) {
+    $missing.Add("reference image is not used -> $allowedReferenceImage")
 }
 
 if ($unreferenced.Count -gt 0) {

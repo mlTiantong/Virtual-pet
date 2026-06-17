@@ -240,41 +240,9 @@
               <StackPanel Orientation="Horizontal" Margin="2,0,0,2">
                 <TextBlock Text="✓" Foreground="#55E08F" FontSize="18" FontWeight="Bold" Margin="0,0,8,0" />
                 <TextBlock Text="已加载：" Foreground="#F2F8FF" FontWeight="SemiBold" FontSize="14" />
-                <TextBlock Text="新版美术资源包" Foreground="#7FB1FF" FontWeight="Bold" FontSize="14" />
+                <TextBlock Text="基础人物参考图" Foreground="#7FB1FF" FontWeight="Bold" FontSize="14" />
               </StackPanel>
-              <TextBlock Text="桌宠已使用 4×4 SpriteSheet 美术资源，动画首尾闭环。" Foreground="#C9D7EA" FontSize="12" Margin="28,0,0,12" TextWrapping="Wrap" />
-
-              <Border Background="#1CFFFFFF" CornerRadius="14" BorderBrush="#2EFFFFFF" BorderThickness="1" Padding="10">
-                <StackPanel>
-                  <TextBlock Text="动作预览" Foreground="#F2F8FF" FontWeight="Bold" Margin="0,0,0,8" />
-                  <UniformGrid Columns="4">
-                    <Button Style="{StaticResource PreviewButton}" Click="PreviewIdle_Click">
-                      <StackPanel>
-                        <Image Source="assets/previews/idle.png" Width="46" Height="46" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality" />
-                        <TextBlock Text="站立" HorizontalAlignment="Center" Foreground="#F2F8FF" Margin="0,4,0,0" />
-                      </StackPanel>
-                    </Button>
-                    <Button Style="{StaticResource PreviewButton}" Click="PreviewDrag_Click">
-                      <StackPanel>
-                        <Image Source="assets/previews/drag_hold.png" Width="46" Height="46" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality" />
-                        <TextBlock Text="拖拽" HorizontalAlignment="Center" Foreground="#F2F8FF" Margin="0,4,0,0" />
-                      </StackPanel>
-                    </Button>
-                    <Button Style="{StaticResource PreviewButton}" Click="PreviewThink_Click">
-                      <StackPanel>
-                        <Image Source="assets/previews/study_guard.png" Width="46" Height="46" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality" />
-                        <TextBlock Text="思考" HorizontalAlignment="Center" Foreground="#F2F8FF" Margin="0,4,0,0" />
-                      </StackPanel>
-                    </Button>
-                    <Button Style="{StaticResource PreviewButton}" Click="PreviewWave_Click">
-                      <StackPanel>
-                        <Image Source="assets/previews/part_hand_wave.png" Width="46" Height="46" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality" />
-                        <TextBlock Text="挥手" HorizontalAlignment="Center" Foreground="#F2F8FF" Margin="0,4,0,0" />
-                      </StackPanel>
-                    </Button>
-                  </UniformGrid>
-                </StackPanel>
-              </Border>
+              <TextBlock Text="当前已移除不统一动作素材，仅保留 reference/character_reference.png。" Foreground="#C9D7EA" FontSize="12" Margin="28,0,0,12" TextWrapping="Wrap" />
             </StackPanel>
           </TabItem>
         </TabControl>

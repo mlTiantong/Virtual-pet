@@ -1,27 +1,4 @@
 {
   "schema": 1,
-  "sequences": {
-    "feed_snack": {
-      "steps": [
-        { "animation": "feed_snack_01_notice", "durationMs": 360 },
-        { "prop": "prop_cake", "motion": "flyToMouthOrHand", "durationMs": 520 },
-        { "animation": "feed_snack_02_reach", "durationMs": 360 },
-        { "animation": "feed_snack_03_take", "durationMs": 420 },
-        { "animation": "feed_snack_04_eat", "durationMs": 700 },
-        { "prop": "fx_heart", "motion": "pop", "durationMs": 360 },
-        { "animation": "feed_snack_05_happy", "durationMs": 760 }
-      ]
-    },
-    "feed_meal": {
-      "steps": [
-        { "animation": "feed_meal_01_notice", "durationMs": 360 },
-        { "prop": "prop_omurice", "motion": "flyToHands", "durationMs": 520 },
-        { "animation": "feed_meal_02_reach", "durationMs": 360 },
-        { "animation": "feed_meal_03_take", "durationMs": 520 },
-        { "animation": "feed_meal_04_eat", "durationMs": 800 },
-        { "prop": "fx_sparkle", "motion": "pop", "durationMs": 360 },
-        { "animation": "feed_meal_05_happy", "durationMs": 760 }
-      ]
-    }
-  }
+  "sequences": {}
 }
