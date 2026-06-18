@@ -62,6 +62,12 @@ class RigFrame:
     upper_pull_y: float = 0
     upper_pull_focus_y: float = 0.22
     upper_pull_radius: float = 0.55
+    hand_pull_x: float = 0
+    hand_pull_y: float = 0
+    hand_pull_focus_x: float = 0.21
+    hand_pull_focus_y: float = 0.42
+    hand_pull_radius_x: float = 0.16
+    hand_pull_radius_y: float = 0.16
     hair_dx: float = 0
     hair_dy: float = 0
     hair_sx: float = 1
@@ -409,6 +415,40 @@ def elastic_pull_layer(
     return Image.fromarray(np.clip(sampled, 0, 255).astype(np.uint8), "RGBA")
 
 
+def local_pull_layer(
+    layer: Image.Image,
+    pull_x: float,
+    pull_y: float,
+    focus_x: float,
+    focus_y: float,
+    radius_x_factor: float,
+    radius_y_factor: float,
+) -> Image.Image:
+    if abs(pull_x) < 0.01 and abs(pull_y) < 0.01:
+        return layer
+
+    bbox = layer.getchannel("A").getbbox()
+    if bbox is None:
+        return layer
+
+    x0, y0, x1, y1 = bbox
+    width = max(1, x1 - x0)
+    height = max(1, y1 - y0)
+    center_x = x0 + width * focus_x
+    center_y = y0 + height * focus_y
+    radius_x = max(1.0, width * radius_x_factor)
+    radius_y = max(1.0, height * radius_y_factor)
+
+    yy, xx = np.mgrid[0:CANVAS_SIZE, 0:CANVAS_SIZE].astype(np.float32)
+    distance = np.sqrt(((xx - center_x) / radius_x) ** 2 + ((yy - center_y) / radius_y) ** 2)
+    weight = np.clip(1.0 - distance, 0.0, 1.0) ** 2
+
+    src_x = xx - pull_x * weight
+    src_y = yy - pull_y * weight
+    sampled = bilinear_sample(np.array(layer).astype(np.float32), src_x, src_y)
+    return Image.fromarray(np.clip(sampled, 0, 255).astype(np.uint8), "RGBA")
+
+
 def wave_layer_horizontal(layer: Image.Image, amplitude: float, phase: float, power: float = 1.35) -> Image.Image:
     if abs(amplitude) < 0.01:
         return layer
@@ -500,6 +540,15 @@ def render_frame(
         frame.upper_pull_y,
         frame.upper_pull_focus_y,
         frame.upper_pull_radius,
+    )
+    upper_layer = local_pull_layer(
+        upper_layer,
+        frame.hand_pull_x,
+        frame.hand_pull_y,
+        frame.hand_pull_focus_x,
+        frame.hand_pull_focus_y,
+        frame.hand_pull_radius_x,
+        frame.hand_pull_radius_y,
     )
     upper_layer = wave_layer_horizontal(upper_layer, frame.upper_wave, frame.upper_wave_phase, power=1.45)
     canvas.alpha_composite(hair_layer)
@@ -740,25 +789,15 @@ def hand_invite_frames(count: int) -> list[RigFrame]:
     for i in range(count):
         phase = math.tau * i / count
         wave = math.sin(phase * 2.0)
-        breath = math.sin(phase)
+        lift = math.sin(phase * 2.0 + math.pi / 2)
         frames.append(
             RigFrame(
-                lower_dx=0.35 * wave,
-                lower_dy=-1.2 * breath,
-                lower_angle=0.18 * wave,
-                lower_wave=0.35,
-                lower_wave_phase=phase + 1.2,
-                upper_dx=1.1 * wave,
-                upper_dy=-1.8 - 1.2 * breath,
-                upper_angle=0.75 * wave,
-                upper_pull_x=0.9 * wave,
-                upper_pull_focus_y=0.44,
-                upper_pull_radius=0.50,
-                upper_wave=0.65,
-                upper_wave_phase=phase + 2.0,
-                hair_angle=0.45 * math.sin(phase * 2.0 - 0.8),
-                hair_wave=0.45,
-                hair_wave_phase=phase + 2.9,
+                hand_pull_x=4.0 * wave,
+                hand_pull_y=-2.2 * lift,
+                hand_pull_focus_x=0.18,
+                hand_pull_focus_y=0.41,
+                hand_pull_radius_x=0.15,
+                hand_pull_radius_y=0.13,
             )
         )
     return frames
