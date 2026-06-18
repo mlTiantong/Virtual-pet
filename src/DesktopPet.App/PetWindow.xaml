@@ -134,7 +134,7 @@
             BorderBrush="#78FFFFFF"
             BorderThickness="1"
             CornerRadius="24"
-            Visibility="Visible"
+            Visibility="Collapsed"
             MouseEnter="HudOrBubble_MouseEnter"
             MouseLeave="HudOrBubble_MouseLeave"
             Effect="{StaticResource SoftShadow}">

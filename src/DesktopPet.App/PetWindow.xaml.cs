@@ -17,6 +17,17 @@ namespace DesktopPet.App;
 
 public partial class PetWindow : Window
 {
+    private enum PetAnimationState
+    {
+        Idle,
+        OneShot,
+        LoopingAction,
+        DragStart,
+        DragHold,
+        Drop,
+        Study
+    }
+
     private readonly string _assetRoot;
     private AnimationCatalog _catalog;
     private HitTestService _hitTest;
@@ -45,6 +56,7 @@ public partial class PetWindow : Window
     private bool _returnToIdleAfterOneShot;
     private BitmapSource? _currentBitmap;
     private string _currentAnimationId = "idle_m8";
+    private PetAnimationState _animationState = PetAnimationState.Idle;
 
     private CancellationTokenSource? _crossfadeCts;
     private const double CrossfadeDurationMs = 150;
@@ -66,7 +78,6 @@ public partial class PetWindow : Window
     private PetHitRegion _lastTapRegion = PetHitRegion.None;
     private DateTimeOffset _lastTapAt = DateTimeOffset.MinValue;
     private int _repeatCount;
-    private DateTimeOffset _lastHoverEffectAt = DateTimeOffset.MinValue;
     private DateTimeOffset _lastIdleBubbleAt = DateTimeOffset.MinValue;
     private readonly Random _random = new();
 
@@ -169,6 +180,9 @@ public partial class PetWindow : Window
     private void PlayAnimation(string id, bool returnToIdle = true)
     {
         if (!_catalog.Has(id)) id = _catalog.DefaultAnimation;
+        var nextState = ResolveAnimationState(id, returnToIdle);
+        if (!CanSwitchTo(nextState))
+            return;
 
         if (id == _currentAnimationId && _activeAnimation?.Loop == true)
             return;
@@ -182,7 +196,8 @@ public partial class PetWindow : Window
         _currentAnimationId = id;
         _frameIndex = 0;
         _animationStartedAt = DateTimeOffset.Now;
-        _returnToIdleAfterOneShot = returnToIdle && !_activeAnimation.Loop;
+        _returnToIdleAfterOneShot = returnToIdle && id != "idle_m8";
+        _animationState = nextState;
 
         var firstFrame = _catalog.LoadFrame(_activeAnimation, 0);
         _currentBitmap = firstFrame;
@@ -201,6 +216,45 @@ public partial class PetWindow : Window
 
     private static bool UsesInstantAnimationSwitch(string id) =>
         id is "drag_start" or "drag_hold" or "drop";
+
+    private PetAnimationState ResolveAnimationState(string id, bool returnToIdle)
+    {
+        if (id == "idle_m8") return PetAnimationState.Idle;
+        if (id == "drag_start") return PetAnimationState.DragStart;
+        if (id == "drag_hold") return PetAnimationState.DragHold;
+        if (id == "drop") return PetAnimationState.Drop;
+        if (id == "study_guard_m8" && _study.IsActive) return PetAnimationState.Study;
+
+        var spec = _catalog.Get(id);
+        if (spec.Loop || !returnToIdle) return PetAnimationState.LoopingAction;
+        return PetAnimationState.OneShot;
+    }
+
+    private bool CanSwitchTo(PetAnimationState nextState)
+    {
+        if (_dragging)
+            return nextState is PetAnimationState.DragStart or PetAnimationState.DragHold or PetAnimationState.Drop;
+
+        if (_animationState is PetAnimationState.DragStart or PetAnimationState.DragHold)
+            return nextState is PetAnimationState.Drop or PetAnimationState.Idle;
+
+        if (_study.IsActive && nextState == PetAnimationState.Idle)
+            return false;
+
+        if (nextState == PetAnimationState.Idle && IsTemporaryAnimationActive())
+            return false;
+
+        return true;
+    }
+
+    private bool IsTemporaryAnimationActive()
+    {
+        if (_activeAnimation is null || _activeAnimation.Loop) return false;
+        if (_animationState is not (PetAnimationState.OneShot or PetAnimationState.Drop)) return false;
+
+        var duration = Math.Max(350, _activeAnimation.DurationMs);
+        return (DateTimeOffset.Now - _animationStartedAt).TotalMilliseconds < duration;
+    }
 
     private void StartFrameTimer()
     {
@@ -239,6 +293,12 @@ public partial class PetWindow : Window
 
         if (_activeAnimation.Loop)
         {
+            if (_returnToIdleAfterOneShot && HasAnimationDurationElapsed())
+            {
+                PlayAnimation("idle_m8", returnToIdle: false);
+                return;
+            }
+
             _frameIndex = (_frameIndex + 1) % _catalog.GetFrameCount(_activeAnimation);
             SetFrame(_frameIndex);
             return;
@@ -251,19 +311,26 @@ public partial class PetWindow : Window
             return;
         }
 
-        var duration = _currentAnimationId == "drag_start"
-            ? Math.Max(1, _activeAnimation.DurationMs)
-            : Math.Max(350, _activeAnimation.DurationMs);
-        if (_dragging && _currentAnimationId == "drag_start" && (DateTimeOffset.Now - _animationStartedAt).TotalMilliseconds >= duration)
+        if (_dragging && _currentAnimationId == "drag_start" && HasAnimationDurationElapsed())
         {
             PlayAnimation("drag_hold", returnToIdle: false);
             return;
         }
 
-        if (_returnToIdleAfterOneShot && (DateTimeOffset.Now - _animationStartedAt).TotalMilliseconds >= duration)
+        if (_returnToIdleAfterOneShot && HasAnimationDurationElapsed())
         {
             PlayAnimation("idle_m8", returnToIdle: false);
         }
+    }
+
+    private bool HasAnimationDurationElapsed()
+    {
+        if (_activeAnimation is null) return true;
+
+        var minDuration = _activeAnimation.Loop ? 1200 : 350;
+        if (_currentAnimationId == "drag_start") minDuration = 1;
+        var duration = Math.Max(minDuration, _activeAnimation.DurationMs);
+        return (DateTimeOffset.Now - _animationStartedAt).TotalMilliseconds >= duration;
     }
 
     private void SetFrame(int index)
@@ -277,13 +344,10 @@ public partial class PetWindow : Window
 
     private void PetSprite_MouseEnter(object sender, MouseEventArgs e)
     {
-        ShowHud();
     }
 
     private void PetSprite_MouseLeave(object sender, MouseEventArgs e)
     {
-        ScheduleHudHide();
-        if (!_dragging && !_study.IsActive) PlayAnimation("idle_m8", returnToIdle: false);
     }
 
     private void PetSprite_MouseMove(object sender, MouseEventArgs e)
@@ -312,14 +376,7 @@ public partial class PetWindow : Window
             return;
         }
 
-        var now = DateTimeOffset.Now;
-        if ((now - _lastHoverEffectAt).TotalMilliseconds < 1200) return;
-
-        var region = HitTestPet(e);
-        if (region == PetHitRegion.None) return;
-        var action = _behavior.HandleHover(region, _state);
-        _lastHoverEffectAt = now;
-        RunAction(action, showBubble: _random.NextDouble() < 0.35);
+        // Hover no longer drives animation state; click/tap and explicit buttons do.
     }
 
     private void PetSprite_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -352,6 +409,7 @@ public partial class PetWindow : Window
             return;
         }
 
+        ShowHud();
         HandleTap(_pressedRegion);
         e.Handled = true;
     }
@@ -450,15 +508,17 @@ public partial class PetWindow : Window
 
     private void PositionBubbleAndHud()
     {
-        Canvas.SetLeft(BubbleBorder, 22);
-        Canvas.SetTop(BubbleBorder, 22);
+        var petLeft = Canvas.GetLeft(PetSprite);
+        var petTop = Canvas.GetTop(PetSprite);
+        Canvas.SetLeft(BubbleBorder, petLeft + 48);
+        Canvas.SetTop(BubbleBorder, Math.Max(10, petTop - 54));
         Canvas.SetLeft(HudPanel, Math.Max(390, Width - HudPanel.Width - 22));
         Canvas.SetTop(HudPanel, 46);
     }
 
     private void IdleTimer_Tick(object? sender, EventArgs e)
     {
-        if (_study.IsActive || _dragging) return;
+        if (_study.IsActive || _dragging || _animationState != PetAnimationState.Idle) return;
         if ((DateTimeOffset.Now - _lastTapAt).TotalSeconds < 5) return;
 
         var roll = _random.NextDouble();
@@ -498,6 +558,7 @@ public partial class PetWindow : Window
         BubbleText.Text = $"{prefix} {remaining:mm\\:ss}";
         BubbleBorder.Tag = "pinned";
         BubbleBorder.Visibility = Visibility.Visible;
+        PositionBubbleAndHud();
     }
 
 
