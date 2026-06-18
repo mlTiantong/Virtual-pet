@@ -511,6 +511,12 @@ public partial class PetWindow : Window
     private void PreviewThink_Click(object sender, RoutedEventArgs e) => PlayAnimation("study_guard_m8", returnToIdle: false);
     private void PreviewWave_Click(object sender, RoutedEventArgs e) => PlayAnimation("hand_invite_m8");
 
+    private void ActionTestButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: string animationId }) return;
+        PlayAnimation(animationId);
+    }
+
     private void PatButton_Click(object sender, RoutedEventArgs e) => HandleTap(PetHitRegion.Head);
     private void SnackButton_Click(object sender, RoutedEventArgs e) => Feed("snack");
     private void MealButton_Click(object sender, RoutedEventArgs e) => Feed("meal");

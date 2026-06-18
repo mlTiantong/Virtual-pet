@@ -40,13 +40,18 @@ def chroma_key_green(image: Image.Image) -> Image.Image:
         & ((g - b) > 35)
     )
 
-    alpha = np.where(green_bg, 0, 255).astype(np.uint8)
-    alpha_img = Image.fromarray(alpha, "L").filter(ImageFilter.GaussianBlur(0.55))
+    subject = ~green_bg
+    alpha_img = Image.fromarray((subject.astype(np.uint8) * 255), "L")
+    alpha_img = alpha_img.filter(ImageFilter.MinFilter(3)).filter(ImageFilter.GaussianBlur(0.45))
     alpha = np.array(alpha_img).astype(np.uint8)
 
-    foreground = alpha > 8
-    green_cap = np.maximum(r, b) + 22
-    arr[..., 1] = np.where(foreground, np.minimum(g, green_cap), g)
+    foreground = alpha > 6
+    neutral_green = (r * 0.45) + (b * 0.55) + 10
+    green_cap = np.maximum(r, b) + 8
+    edge_weight = np.clip((180 - alpha) / 180, 0, 1)
+    capped_green = np.minimum(g, green_cap)
+    despilled_green = capped_green * (1 - edge_weight) + np.minimum(capped_green, neutral_green) * edge_weight
+    arr[..., 1] = np.where(foreground, despilled_green, g)
     arr[..., 3] = alpha
     return Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8), "RGBA")
 

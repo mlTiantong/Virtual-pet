@@ -205,6 +205,30 @@
               </UniformGrid>
             </StackPanel>
           </TabItem>
+          <TabItem Header="动作">
+            <ScrollViewer Margin="0,14,0,0" VerticalScrollBarVisibility="Auto" MaxHeight="270">
+              <UniformGrid Columns="3">
+                <Button Style="{StaticResource GlassButton}" Content="待机" Tag="idle_m8" Click="ActionTestButton_Click" Margin="0,4,4,4" />
+                <Button Style="{StaticResource GlassButton}" Content="悬停" Tag="hover_m8" Click="ActionTestButton_Click" Margin="4" />
+                <Button Style="{StaticResource GlassButton}" Content="拖起" Tag="drag_start" Click="ActionTestButton_Click" Margin="4,4,0,4" />
+                <Button Style="{StaticResource GlassButton}" Content="拖拽" Tag="drag_hold" Click="ActionTestButton_Click" Margin="0,4,4,4" />
+                <Button Style="{StaticResource GlassButton}" Content="落下" Tag="drop" Click="ActionTestButton_Click" Margin="4" />
+                <Button Style="{StaticResource GlassButton}" Content="摸头" Tag="pat_head_m8" Click="ActionTestButton_Click" Margin="4,4,0,4" />
+                <Button Style="{StaticResource GlassButton}" Content="脸红" Tag="face_reaction_m8" Click="ActionTestButton_Click" Margin="0,4,4,4" />
+                <Button Style="{StaticResource GlassButton}" Content="捏手" Tag="clasp_idle_m8" Click="ActionTestButton_Click" Margin="4" />
+                <Button Style="{StaticResource GlassButton}" Content="生气" Tag="tap_annoyed" Click="ActionTestButton_Click" Margin="4,4,0,4" />
+                <Button Style="{StaticResource GlassButton}" Content="挥手" Tag="hand_invite_m8" Click="ActionTestButton_Click" Margin="0,4,4,4" />
+                <Button Style="{StaticResource GlassButton}" Content="读书" Tag="study_guard_m8" Click="ActionTestButton_Click" Margin="4" />
+                <Button Style="{StaticResource GlassButton}" Content="困倦" Tag="sleepy_m8" Click="ActionTestButton_Click" Margin="4,4,0,4" />
+                <Button Style="{StaticResource GlassButton}" Content="抱玩偶" Tag="plush_hug_m8" Click="ActionTestButton_Click" Margin="0,4,4,4" />
+                <Button Style="{StaticResource GlassButton}" Content="说话" Tag="talking" Click="ActionTestButton_Click" Margin="4" />
+                <Button Style="{StaticResource GlassButton}" Content="点心" Tag="feed_snack" Click="ActionTestButton_Click" Margin="4,4,0,4" />
+                <Button Style="{StaticResource GlassButton}" Content="正餐" Tag="feed_meal" Click="ActionTestButton_Click" Margin="0,4,4,4" />
+                <Button Style="{StaticResource GlassButton}" Content="热茶" Tag="rest_tea" Click="ActionTestButton_Click" Margin="4" />
+                <Button Style="{StaticResource GlassButton}" Content="开心" Tag="idle_cheer_m8" Click="ActionTestButton_Click" Margin="4,4,0,4" />
+              </UniformGrid>
+            </ScrollViewer>
+          </TabItem>
           <TabItem Header="设置">
             <StackPanel Margin="0,14,0,0">
               <Button x:Name="TopmostButton" Style="{StaticResource RowButton}" Click="TopmostButton_Click">

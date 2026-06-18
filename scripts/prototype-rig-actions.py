@@ -155,13 +155,18 @@ def chroma_key_green(image: Image.Image) -> Image.Image:
         & ((g - b) > 35)
     )
 
-    alpha = np.where(green_bg, 0, 255).astype(np.uint8)
-    alpha_img = Image.fromarray(alpha, "L").filter(ImageFilter.GaussianBlur(0.55))
+    subject = ~green_bg
+    alpha_img = Image.fromarray((subject.astype(np.uint8) * 255), "L")
+    alpha_img = alpha_img.filter(ImageFilter.MinFilter(3)).filter(ImageFilter.GaussianBlur(0.45))
     alpha = np.array(alpha_img).astype(np.uint8)
 
-    foreground = alpha > 8
-    green_cap = np.maximum(r, b) + 22
-    arr[..., 1] = np.where(foreground, np.minimum(g, green_cap), g)
+    foreground = alpha > 6
+    neutral_green = (r * 0.45) + (b * 0.55) + 10
+    green_cap = np.maximum(r, b) + 8
+    edge_weight = np.clip((180 - alpha) / 180, 0, 1)
+    capped_green = np.minimum(g, green_cap)
+    despilled_green = capped_green * (1 - edge_weight) + np.minimum(capped_green, neutral_green) * edge_weight
+    arr[..., 1] = np.where(foreground, despilled_green, g)
     arr[..., 3] = alpha
     return Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8), "RGBA")
 
@@ -738,21 +743,21 @@ def hand_invite_frames(count: int) -> list[RigFrame]:
         breath = math.sin(phase)
         frames.append(
             RigFrame(
-                lower_dx=1.5 * wave,
-                lower_dy=-2.0 * breath,
-                lower_angle=0.7 * wave,
-                lower_wave=2.0,
+                lower_dx=0.35 * wave,
+                lower_dy=-1.2 * breath,
+                lower_angle=0.18 * wave,
+                lower_wave=0.35,
                 lower_wave_phase=phase + 1.2,
-                upper_dx=4.5 * wave,
-                upper_dy=-4.0 - 2.0 * breath,
-                upper_angle=2.8 * wave,
-                upper_pull_x=5.0 * wave,
+                upper_dx=1.1 * wave,
+                upper_dy=-1.8 - 1.2 * breath,
+                upper_angle=0.75 * wave,
+                upper_pull_x=0.9 * wave,
                 upper_pull_focus_y=0.44,
-                upper_pull_radius=0.42,
-                upper_wave=4.8,
+                upper_pull_radius=0.50,
+                upper_wave=0.65,
                 upper_wave_phase=phase + 2.0,
-                hair_angle=2.0 * math.sin(phase * 2.0 - 0.8),
-                hair_wave=3.0,
+                hair_angle=0.45 * math.sin(phase * 2.0 - 0.8),
+                hair_wave=0.45,
                 hair_wave_phase=phase + 2.9,
             )
         )
@@ -878,20 +883,20 @@ def idle_cheer_frames(count: int) -> list[RigFrame]:
         side = math.sin(math.tau * t)
         frames.append(
             RigFrame(
-                lower_dy=-12.0 * hop,
-                lower_sx=1.0 - 0.006 * hop,
-                lower_sy=1.0 + 0.012 * hop,
-                lower_angle=1.2 * side,
-                lower_wave=2.8 * hop,
+                lower_dy=-5.0 * hop,
+                lower_sx=1.0 - 0.003 * hop,
+                lower_sy=1.0 + 0.006 * hop,
+                lower_angle=0.45 * side,
+                lower_wave=0.8 * hop,
                 lower_wave_phase=t * math.tau + 0.8,
-                upper_dy=-16.0 * hop,
-                upper_angle=3.2 * side,
-                upper_pull_x=5.0 * side * hop,
+                upper_dy=-7.0 * hop,
+                upper_angle=1.0 * side,
+                upper_pull_x=1.2 * side * hop,
                 upper_pull_focus_y=0.36,
-                upper_wave=6.0 * hop,
+                upper_wave=1.2 * hop,
                 upper_wave_phase=t * math.tau + 1.4,
-                hair_angle=3.6 * side * hop,
-                hair_wave=5.2 * hop,
+                hair_angle=1.1 * side * hop,
+                hair_wave=1.0 * hop,
                 hair_wave_phase=t * math.tau + 2.3,
             )
         )
