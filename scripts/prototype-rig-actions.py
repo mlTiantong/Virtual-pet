@@ -85,6 +85,63 @@ class SequenceDef:
     return_to_idle: bool = True
 
 
+@dataclass(frozen=True)
+class ActionSourceSpec:
+    source_path: Path
+    matched_path: Path
+    target_height: int = CHARACTER_HEIGHT
+    max_width: int | None = None
+    foot_y: int = FOOT_Y
+
+
+ACTION_SOURCE_SPECS: dict[str, ActionSourceSpec] = {
+    "drag_hold": ActionSourceSpec(
+        DRAG_HOLD_SOURCE,
+        DRAG_HOLD_MATCHED,
+        target_height=DRAG_HOLD_CHARACTER_HEIGHT,
+        max_width=DRAG_HOLD_MAX_WIDTH,
+        foot_y=DRAG_HOLD_FOOT_Y,
+    ),
+    "clasp_idle": ActionSourceSpec(
+        ACTION_SOURCE_ROOT / "clasp_idle_source.png",
+        ARTIFACT_ROOT / "clasp_idle_matched.png",
+    ),
+    "wave": ActionSourceSpec(
+        ACTION_SOURCE_ROOT / "wave_source.png",
+        ARTIFACT_ROOT / "wave_matched.png",
+    ),
+    "drink": ActionSourceSpec(
+        ACTION_SOURCE_ROOT / "drink_source.png",
+        ARTIFACT_ROOT / "drink_matched.png",
+    ),
+    "sleepy": ActionSourceSpec(
+        ACTION_SOURCE_ROOT / "sleepy_source.png",
+        ARTIFACT_ROOT / "sleepy_matched.png",
+    ),
+    "study_read": ActionSourceSpec(
+        ACTION_SOURCE_ROOT / "study_read_source.png",
+        ARTIFACT_ROOT / "study_read_matched.png",
+        target_height=660,
+        foot_y=740,
+    ),
+    "plush_hug": ActionSourceSpec(
+        ACTION_SOURCE_ROOT / "plush_hug_source.png",
+        ARTIFACT_ROOT / "plush_hug_matched.png",
+    ),
+}
+
+SEQUENCE_ACTION_SOURCES = {
+    "drag_hold": "drag_hold",
+    "clasp_idle_m8": "clasp_idle",
+    "hand_invite_m8": "wave",
+    "idle_cheer_m8": "wave",
+    "rest_tea": "drink",
+    "sleepy_m8": "sleepy",
+    "study_guard_m8": "study_read",
+    "plush_hug_m8": "plush_hug",
+}
+
+
 def chroma_key_green(image: Image.Image) -> Image.Image:
     rgba = image.convert("RGBA")
     arr = np.array(rgba).astype(np.float32)
@@ -252,6 +309,15 @@ def make_layers(character: Image.Image, bbox: tuple[int, int, int, int]) -> tupl
         Image.fromarray(np.clip(upper, 0, 255).astype(np.uint8), "RGBA"),
         Image.fromarray(np.clip(hair, 0, 255).astype(np.uint8), "RGBA"),
     )
+
+
+def build_rig_layers(
+    character: Image.Image,
+    bbox: tuple[int, int, int, int],
+) -> tuple[Image.Image, Image.Image, Image.Image, tuple[float, float], tuple[float, float]]:
+    lower, upper, hair = make_layers(character, bbox)
+    root_pivot, neck_pivot = pivots_for_bbox(bbox)
+    return lower, upper, hair, root_pivot, neck_pivot
 
 
 def scale_about(layer: Image.Image, sx: float, sy: float, center: tuple[float, float]) -> Image.Image:
@@ -832,6 +898,76 @@ def idle_cheer_frames(count: int) -> list[RigFrame]:
     return frames
 
 
+def clasp_idle_frames(count: int) -> list[RigFrame]:
+    frames: list[RigFrame] = []
+    for i in range(count):
+        phase = math.tau * i / count
+        breath = math.sin(phase)
+        shy = math.sin(phase + 0.5)
+        frames.append(
+            RigFrame(
+                lower_dy=-2.4 * breath,
+                lower_sx=1.0 - 0.002 * breath,
+                lower_sy=1.0 + 0.004 * breath,
+                upper_dy=-3.2 * breath,
+                upper_angle=0.45 * shy,
+                upper_wave=0.8,
+                upper_wave_phase=phase + 1.0,
+                hair_angle=0.35 * math.sin(phase - 0.7),
+                hair_wave=0.7,
+                hair_wave_phase=phase + 1.7,
+            )
+        )
+    return frames
+
+
+def sleepy_frames(count: int) -> list[RigFrame]:
+    frames: list[RigFrame] = []
+    for i in range(count):
+        phase = math.tau * i / count
+        breath = math.sin(phase)
+        drowse = math.sin(phase + 1.1)
+        frames.append(
+            RigFrame(
+                lower_dy=1.5 * breath,
+                lower_sx=1.0 + 0.002 * breath,
+                lower_sy=1.0 - 0.003 * breath,
+                upper_dy=2.0 * breath,
+                upper_angle=0.6 * drowse,
+                upper_wave=0.5,
+                upper_wave_phase=phase + 0.9,
+                hair_angle=0.35 * math.sin(phase - 0.4),
+                hair_wave=0.45,
+                hair_wave_phase=phase + 1.6,
+            )
+        )
+    return frames
+
+
+def plush_hug_frames(count: int) -> list[RigFrame]:
+    frames: list[RigFrame] = []
+    for i in range(count):
+        t = i / max(1, count - 1)
+        hop = max(0.0, math.sin(math.pi * t * 2.0))
+        side = math.sin(math.tau * t)
+        frames.append(
+            RigFrame(
+                lower_dy=-5.0 * hop,
+                lower_sx=1.0 - 0.003 * hop,
+                lower_sy=1.0 + 0.006 * hop,
+                lower_angle=0.55 * side,
+                upper_dy=-6.0 * hop,
+                upper_angle=1.0 * side,
+                upper_wave=1.0 * hop,
+                upper_wave_phase=t * math.tau + 1.0,
+                hair_angle=1.2 * side * hop,
+                hair_wave=0.9 * hop,
+                hair_wave_phase=t * math.tau + 1.8,
+            )
+        )
+    return frames
+
+
 def sequence_defs() -> list[SequenceDef]:
     return [
         SequenceDef("idle_m8", idle_frames(16), fps=8, loop=True, duration_ms=0, return_to_idle=False),
@@ -841,9 +977,12 @@ def sequence_defs() -> list[SequenceDef]:
         SequenceDef("drop", drop_frames(), fps=12, loop=False, duration_ms=1000),
         SequenceDef("pat_head_m8", pat_head_frames(8), fps=12, loop=False, duration_ms=700),
         SequenceDef("face_reaction_m8", face_reaction_frames(8), fps=12, loop=False, duration_ms=700),
+        SequenceDef("clasp_idle_m8", clasp_idle_frames(10), fps=10, loop=False, duration_ms=900),
         SequenceDef("tap_annoyed", tap_annoyed_frames(8), fps=12, loop=False, duration_ms=700),
         SequenceDef("hand_invite_m8", hand_invite_frames(10), fps=10, loop=False, duration_ms=1000),
         SequenceDef("study_guard_m8", study_guard_frames(16), fps=8, loop=True, duration_ms=0, return_to_idle=False),
+        SequenceDef("sleepy_m8", sleepy_frames(16), fps=8, loop=True, duration_ms=0, return_to_idle=False),
+        SequenceDef("plush_hug_m8", plush_hug_frames(10), fps=10, loop=False, duration_ms=900),
         SequenceDef("talking", talking_frames(8), fps=12, loop=False, duration_ms=700),
         SequenceDef("feed_snack", feed_snack_frames(8), fps=12, loop=False, duration_ms=700),
         SequenceDef("feed_meal", feed_meal_frames(8), fps=12, loop=False, duration_ms=700),
@@ -922,7 +1061,7 @@ def write_manifest(defs: list[SequenceDef]) -> None:
         "schema": 2,
         "characterId": "blue_girl_m1",
         "defaultAnimation": "idle_m8",
-        "assetBaseline": "rig_prototype_v7_prone_drag_hold",
+        "assetBaseline": "rig_prototype_v8_multi_action_sources",
         "hitRegions": HIT_REGIONS,
         "animations": animations,
     }
@@ -1126,38 +1265,45 @@ def main() -> None:
     reference = Image.open(REFERENCE)
     keyed = chroma_key_green(reference)
     character, bbox = fit_to_canvas(keyed)
-    lower, upper, hair = make_layers(character, bbox)
-    root_pivot, neck_pivot = pivots_for_bbox(bbox)
+    base_rig = build_rig_layers(character, bbox)
 
-    drag_character, drag_bbox = load_drag_hold_character(character)
-    drag_lower, drag_upper, drag_hair = make_layers(drag_character, drag_bbox)
-    drag_root_pivot, drag_neck_pivot = pivots_for_bbox(drag_bbox)
+    action_rigs: dict[str, tuple[Image.Image, Image.Image, Image.Image, tuple[float, float], tuple[float, float]]] = {}
+    for source_id, source_spec in ACTION_SOURCE_SPECS.items():
+        source_character, source_bbox = load_action_character(
+            source_spec.source_path,
+            source_spec.matched_path,
+            character,
+            target_height=source_spec.target_height,
+            max_width=source_spec.max_width,
+            foot_y=source_spec.foot_y,
+        )
+        action_rigs[source_id] = build_rig_layers(source_character, source_bbox)
 
     defs = sequence_defs()
     sequences: dict[str, list[Image.Image]] = {}
     for spec in defs:
-        if spec.id == "drag_hold":
-            sequences[spec.id] = save_sequence(
-                spec.id,
-                spec.frames,
-                drag_lower,
-                drag_upper,
-                drag_hair,
-                drag_root_pivot,
-                drag_neck_pivot,
-            )
-        else:
-            sequences[spec.id] = save_sequence(spec.id, spec.frames, lower, upper, hair, root_pivot, neck_pivot)
+        source_id = SEQUENCE_ACTION_SOURCES.get(spec.id)
+        rig = action_rigs[source_id] if source_id is not None else base_rig
+        sequences[spec.id] = save_sequence(spec.id, spec.frames, *rig)
 
     write_manifest(defs)
-    save_rig_diagnostics(reference, character, lower, upper, hair, bbox, root_pivot, neck_pivot)
+    base_lower, base_upper, base_hair, base_root_pivot, base_neck_pivot = base_rig
+    save_rig_diagnostics(
+        reference,
+        character,
+        base_lower,
+        base_upper,
+        base_hair,
+        bbox,
+        base_root_pivot,
+        base_neck_pivot,
+    )
     save_contact_sheet(sequences)
     save_quality_report(sequences)
 
     print(f"Generated {len(sequences)} sheets for {sum(len(frames) for frames in sequences.values())} frames under {SHEET_ROOT}")
     print(f"Manifest: {ASSET_ROOT / 'animation-manifest.json'}")
-    print(f"Drag hold source: {DRAG_HOLD_SOURCE}")
-    print(f"Drag hold matched: {DRAG_HOLD_MATCHED}")
+    print(f"Action sources: {ACTION_SOURCE_ROOT}")
     print(f"Diagnostics: {ARTIFACT_ROOT / 'rig_diagnostics.png'}")
     print(f"Quality: {ARTIFACT_ROOT / 'rig_quality_report.json'}")
     print(f"Preview: {ARTIFACT_ROOT / 'rig_prototype_contact_sheet.png'}")

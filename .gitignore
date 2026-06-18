@@ -3,6 +3,8 @@
 [Oo]bj/
 artifacts/
 TestResults/
+__pycache__/
+*.pyc
 
 # Temporary AI art input
 /src/DesktopPet.App/ai */

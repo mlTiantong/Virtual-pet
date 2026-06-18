@@ -2,7 +2,7 @@
   "schema": 2,
   "characterId": "blue_girl_m1",
   "defaultAnimation": "idle_m8",
-  "assetBaseline": "rig_prototype_v7_prone_drag_hold",
+  "assetBaseline": "rig_prototype_v8_multi_action_sources",
   "hitRegions": [
     {
       "id": "face",
@@ -150,6 +150,21 @@
       "frameHeight": 768,
       "frames": []
     },
+    "clasp_idle_m8": {
+      "id": "clasp_idle_m8",
+      "type": "spritesheet",
+      "fps": 10,
+      "loop": false,
+      "durationMs": 900,
+      "returnToIdle": true,
+      "sheet": "runtime/sheets/clasp_idle_m8.png",
+      "columns": 4,
+      "rows": 3,
+      "frameCount": 10,
+      "frameWidth": 768,
+      "frameHeight": 768,
+      "frames": []
+    },
     "tap_annoyed": {
       "id": "tap_annoyed",
       "type": "spritesheet",
@@ -191,6 +206,36 @@
       "columns": 4,
       "rows": 4,
       "frameCount": 16,
+      "frameWidth": 768,
+      "frameHeight": 768,
+      "frames": []
+    },
+    "sleepy_m8": {
+      "id": "sleepy_m8",
+      "type": "spritesheet",
+      "fps": 8,
+      "loop": true,
+      "durationMs": 0,
+      "returnToIdle": false,
+      "sheet": "runtime/sheets/sleepy_m8.png",
+      "columns": 4,
+      "rows": 4,
+      "frameCount": 16,
+      "frameWidth": 768,
+      "frameHeight": 768,
+      "frames": []
+    },
+    "plush_hug_m8": {
+      "id": "plush_hug_m8",
+      "type": "spritesheet",
+      "fps": 10,
+      "loop": false,
+      "durationMs": 900,
+      "returnToIdle": true,
+      "sheet": "runtime/sheets/plush_hug_m8.png",
+      "columns": 4,
+      "rows": 3,
+      "frameCount": 10,
       "frameWidth": 768,
       "frameHeight": 768,
       "frames": []

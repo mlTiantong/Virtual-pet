@@ -75,7 +75,7 @@ public partial class PetWindow : Window
         InitializeComponent();
         _assetRoot = System.IO.Path.Combine(AppContext.BaseDirectory, "assets");
         _catalog = AnimationCatalog.Load(_assetRoot);
-        _catalog.Preload("idle_m8", "hover_m8", "drag_start", "drag_hold", "drop", "pat_head_m8", "face_reaction_m8", "tap_annoyed", "hand_invite_m8", "study_guard_m8", "talking");
+        _catalog.Preload("idle_m8", "hover_m8", "drag_start", "drag_hold", "drop", "pat_head_m8", "face_reaction_m8", "clasp_idle_m8", "tap_annoyed", "hand_invite_m8", "study_guard_m8", "sleepy_m8", "plush_hug_m8", "talking", "rest_tea", "idle_cheer_m8");
         _hitTest = new HitTestService(_catalog.HitRegions);
         _dialogue = DialogueSelector.Load(System.IO.Path.Combine(_assetRoot, "dialogue", "blue-girl.zh-CN.json"));
         _propLayer = new PropLayerService(PropLayer, _assetRoot);

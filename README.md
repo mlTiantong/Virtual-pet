@@ -97,11 +97,12 @@ art_sources/
 2. 检查图片是否为透明 PNG、四角 alpha 是否为 0、人物是否全身完整、头发和鞋子是否没有裁切。
 3. 和 `src/DesktopPet.App/assets/reference/参考图.png` 对比角色一致性：发型、发色、眼睛、服装、裙摆大小、腿长、头身比例必须接近；如果比例明显不一致，先不要接入。
 4. 适合接入后，把图片复制到 `art_sources/actions/<action>_source.png`；不要放进 `src/DesktopPet.App/assets/reference/`，该目录只保留唯一基础参考图。
-5. 在 `scripts/prototype-rig-actions.py` 中为该动作添加或复用动作源加载逻辑，让脚本负责缩放、按参考图校色、alpha 加固和 spritesheet 生成。
-6. 运行 `python .\scripts\prototype-rig-actions.py`，检查 `artifacts\rig-prototype\*_matched.png` 和 `rig_prototype_contact_sheet.png`。
-7. 检查 `rig_quality_report.json`，重点看 `cornerAlphaMax` 是否为 0、`normalizedAlphaLossPctMax` 是否低于阈值。
-8. 运行 `.\scripts\validate-assets.ps1` 和 `dotnet build .\DesktopPet.M1.sln -c Release`。
-9. 运行项目实测动作切换、透明穿透、背景透色和比例一致性。
+5. 如果 AI 给的是 3x2 多动作绿幕图，先运行 `python .\scripts\extract-ai-action-grid.py` 拆成 6 张透明动作源，并检查 `artifacts\ai-action-grid\extracted_actions_contact_sheet.png`。
+6. 在 `scripts/prototype-rig-actions.py` 中为该动作添加或复用动作源加载逻辑，让脚本负责缩放、按参考图校色、alpha 加固和 spritesheet 生成。
+7. 运行 `python .\scripts\prototype-rig-actions.py`，检查 `artifacts\rig-prototype\*_matched.png` 和 `rig_prototype_contact_sheet.png`。
+8. 检查 `rig_quality_report.json`，重点看 `cornerAlphaMax` 是否为 0、`normalizedAlphaLossPctMax` 是否低于阈值。
+9. 运行 `.\scripts\validate-assets.ps1` 和 `dotnet build .\DesktopPet.M1.sln -c Release`。
+10. 运行项目实测动作切换、透明穿透、背景透色和比例一致性。
 
 经验规则：
 
