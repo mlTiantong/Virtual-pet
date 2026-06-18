@@ -134,6 +134,38 @@ ACTION_SOURCE_SPECS: dict[str, ActionSourceSpec] = {
         ACTION_SOURCE_ROOT / "plush_hug_source.png",
         ARTIFACT_ROOT / "plush_hug_matched.png",
     ),
+    "angry": ActionSourceSpec(
+        ACTION_SOURCE_ROOT / "angry_source.png",
+        ARTIFACT_ROOT / "angry_matched.png",
+    ),
+    "snack_cake": ActionSourceSpec(
+        ACTION_SOURCE_ROOT / "snack_cake_source.png",
+        ARTIFACT_ROOT / "snack_cake_matched.png",
+        target_height=660,
+        foot_y=740,
+    ),
+    "meal_table": ActionSourceSpec(
+        ACTION_SOURCE_ROOT / "meal_table_source.png",
+        ARTIFACT_ROOT / "meal_table_matched.png",
+        target_height=660,
+        max_width=704,
+        foot_y=740,
+    ),
+    "photo": ActionSourceSpec(
+        ACTION_SOURCE_ROOT / "photo_source.png",
+        ARTIFACT_ROOT / "photo_matched.png",
+    ),
+    "draw_table": ActionSourceSpec(
+        ACTION_SOURCE_ROOT / "draw_table_source.png",
+        ARTIFACT_ROOT / "draw_table_matched.png",
+        target_height=660,
+        max_width=704,
+        foot_y=740,
+    ),
+    "tongue": ActionSourceSpec(
+        ACTION_SOURCE_ROOT / "tongue_source.png",
+        ARTIFACT_ROOT / "tongue_matched.png",
+    ),
 }
 
 SEQUENCE_ACTION_SOURCES = {
@@ -145,6 +177,12 @@ SEQUENCE_ACTION_SOURCES = {
     "sleepy_m8": "sleepy",
     "study_guard_m8": "study_read",
     "plush_hug_m8": "plush_hug",
+    "tap_annoyed": "angry",
+    "feed_snack": "snack_cake",
+    "feed_meal": "meal_table",
+    "photo_m8": "photo",
+    "draw_m8": "draw_table",
+    "tongue_m8": "tongue",
 }
 
 
@@ -847,22 +885,17 @@ def talking_frames(count: int) -> list[RigFrame]:
 def feed_snack_frames(count: int) -> list[RigFrame]:
     frames: list[RigFrame] = []
     for i in range(count):
-        t = i / max(1, count - 1)
-        hop = max(0.0, math.sin(math.pi * t * 2.0))
-        settle = math.sin(math.pi * t)
+        phase = math.tau * i / count
+        breath = math.sin(phase)
         frames.append(
             RigFrame(
-                lower_dy=-8.0 * hop + 3.0 * settle,
-                lower_sx=1.0 + 0.010 * settle,
-                lower_sy=1.0 - 0.016 * settle,
-                lower_wave=2.0 * settle,
-                lower_wave_phase=t * math.tau + 1.5,
-                upper_dy=-11.0 * hop + 2.0 * settle,
-                upper_angle=1.6 * math.sin(math.tau * t),
-                upper_wave=4.0 * settle,
-                upper_wave_phase=t * math.tau + 2.0,
-                hair_wave=2.6 * settle,
-                hair_wave_phase=t * math.tau + 2.8,
+                lower_dy=-1.6 * breath,
+                lower_sx=1.0 - 0.001 * breath,
+                lower_sy=1.0 + 0.002 * breath,
+                upper_dy=-2.0 * breath,
+                upper_angle=0.25 * math.sin(phase + 0.6),
+                upper_wave=0.4,
+                upper_wave_phase=phase + 1.2,
             )
         )
     return frames
@@ -871,23 +904,67 @@ def feed_snack_frames(count: int) -> list[RigFrame]:
 def feed_meal_frames(count: int) -> list[RigFrame]:
     frames: list[RigFrame] = []
     for i in range(count):
-        t = i / max(1, count - 1)
-        nod = math.sin(math.pi * t)
-        settle = math.sin(math.tau * t * 1.5) * (1.0 - t)
+        phase = math.tau * i / count
+        breath = math.sin(phase)
         frames.append(
             RigFrame(
-                lower_dy=3.0 * nod - 2.0 * settle,
-                lower_sx=1.0 + 0.012 * nod,
-                lower_sy=1.0 - 0.018 * nod,
-                upper_dy=5.0 * nod - 3.0 * settle,
-                upper_sx=1.0 + 0.010 * nod,
-                upper_sy=1.0 - 0.014 * nod,
-                upper_angle=1.2 * settle,
-                upper_wave=2.8 * nod,
-                upper_wave_phase=t * math.tau + 1.7,
-                hair_dy=2.0 * nod,
-                hair_wave=2.2 * nod,
-                hair_wave_phase=t * math.tau + 2.4,
+                lower_dy=-1.2 * breath,
+                lower_sx=1.0 - 0.001 * breath,
+                lower_sy=1.0 + 0.002 * breath,
+                upper_dy=-1.8 * breath,
+                upper_angle=0.2 * math.sin(phase + 0.8),
+                upper_wave=0.35,
+                upper_wave_phase=phase + 1.4,
+            )
+        )
+    return frames
+
+
+def photo_frames(count: int) -> list[RigFrame]:
+    frames: list[RigFrame] = []
+    for i in range(count):
+        phase = math.tau * i / count
+        blink = math.sin(phase * 2.0)
+        frames.append(
+            RigFrame(
+                upper_dy=-1.2 * math.sin(phase),
+                upper_angle=0.25 * blink,
+                upper_wave=0.3,
+                upper_wave_phase=phase + 0.8,
+            )
+        )
+    return frames
+
+
+def draw_frames(count: int) -> list[RigFrame]:
+    frames: list[RigFrame] = []
+    for i in range(count):
+        phase = math.tau * i / count
+        focus = math.sin(phase)
+        frames.append(
+            RigFrame(
+                lower_dy=-0.8 * focus,
+                upper_dy=-1.5 * focus,
+                upper_angle=0.28 * math.sin(phase + 0.5),
+                upper_wave=0.3,
+                upper_wave_phase=phase + 1.0,
+            )
+        )
+    return frames
+
+
+def tongue_frames(count: int) -> list[RigFrame]:
+    frames: list[RigFrame] = []
+    for i in range(count):
+        phase = math.tau * i / count
+        sway = math.sin(phase)
+        frames.append(
+            RigFrame(
+                lower_dy=-1.0 * sway,
+                upper_dy=-1.4 * sway,
+                upper_angle=0.4 * math.sin(phase + 0.4),
+                hair_wave=0.35,
+                hair_wave_phase=phase + 1.6,
             )
         )
     return frames
@@ -1032,6 +1109,9 @@ def sequence_defs() -> list[SequenceDef]:
         SequenceDef("feed_meal", feed_meal_frames(8), fps=12, loop=False, duration_ms=700),
         SequenceDef("rest_tea", rest_tea_frames(10), fps=10, loop=False, duration_ms=1000),
         SequenceDef("idle_cheer_m8", idle_cheer_frames(10), fps=12, loop=False, duration_ms=850),
+        SequenceDef("photo_m8", photo_frames(10), fps=10, loop=False, duration_ms=1000),
+        SequenceDef("draw_m8", draw_frames(12), fps=8, loop=False, duration_ms=1200),
+        SequenceDef("tongue_m8", tongue_frames(10), fps=10, loop=False, duration_ms=900),
     ]
 
 

@@ -10,21 +10,38 @@ from PIL import Image, ImageDraw, ImageFilter
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_INPUT = ROOT / "src" / "DesktopPet.App" / "ai 绘画" / "多动作图.png"
 DEFAULT_OUTPUT = ROOT / "art_sources" / "actions"
-DEFAULT_PREVIEW = ROOT / "artifacts" / "ai-action-grid" / "extracted_actions_contact_sheet.png"
 
 GRID_COLUMNS = 3
 GRID_ROWS = 2
 SOURCE_CANVAS_SIZE = 900
 SOURCE_PADDING = 48
 
-ACTION_SLOTS = [
-    ("clasp_idle_source.png", "clasp_idle", 0, 0),
-    ("wave_source.png", "wave", 1, 0),
-    ("drink_source.png", "drink", 2, 0),
-    ("sleepy_source.png", "sleepy", 0, 1),
-    ("study_read_source.png", "study_read", 1, 1),
-    ("plush_hug_source.png", "plush_hug", 2, 1),
-]
+ACTION_PRESETS = {
+    "multi1": {
+        "preview": ROOT / "artifacts" / "ai-action-grid" / "extracted_actions_contact_sheet.png",
+        "trim_bottom": 0,
+        "slots": [
+            ("clasp_idle_source.png", "clasp_idle", 0, 0),
+            ("wave_source.png", "wave", 1, 0),
+            ("drink_source.png", "drink", 2, 0),
+            ("sleepy_source.png", "sleepy", 0, 1),
+            ("study_read_source.png", "study_read", 1, 1),
+            ("plush_hug_source.png", "plush_hug", 2, 1),
+        ],
+    },
+    "multi2": {
+        "preview": ROOT / "artifacts" / "ai-action-grid" / "extracted_actions2_contact_sheet.png",
+        "trim_bottom": 0,
+        "slots": [
+            ("angry_source.png", "angry", 0, 0),
+            ("snack_cake_source.png", "snack_cake", 1, 0),
+            ("meal_table_source.png", "meal_table", 2, 0),
+            ("photo_source.png", "photo", 0, 1),
+            ("draw_table_source.png", "draw_table", 1, 1),
+            ("tongue_source.png", "tongue", 2, 1),
+        ],
+    },
+}
 
 
 def chroma_key_green(image: Image.Image) -> Image.Image:
@@ -105,7 +122,14 @@ def make_contact_sheet(items: list[tuple[str, Image.Image]], path: Path) -> None
     sheet.convert("RGB").save(path)
 
 
-def extract_grid(input_path: Path, output_root: Path, preview_path: Path) -> list[Path]:
+def infer_preset(input_path: Path) -> str:
+    return "multi2" if "2" in input_path.stem else "multi1"
+
+
+def extract_grid(input_path: Path, output_root: Path, preview_path: Path, preset: str) -> list[Path]:
+    preset_spec = ACTION_PRESETS[preset]
+    slots = preset_spec["slots"]
+    trim_bottom = int(preset_spec["trim_bottom"])
     source = Image.open(input_path).convert("RGBA")
     cell_w = source.width // GRID_COLUMNS
     cell_h = source.height // GRID_ROWS
@@ -113,11 +137,12 @@ def extract_grid(input_path: Path, output_root: Path, preview_path: Path) -> lis
 
     saved: list[Path] = []
     previews: list[tuple[str, Image.Image]] = []
-    for filename, label, col, row in ACTION_SLOTS:
+    for filename, label, col, row in slots:
         x0 = col * cell_w
         y0 = row * cell_h
         x1 = source.width if col == GRID_COLUMNS - 1 else (col + 1) * cell_w
         y1 = source.height if row == GRID_ROWS - 1 else (row + 1) * cell_h
+        y1 -= trim_bottom
         cell = source.crop((x0, y0, x1, y1))
         keyed = chroma_key_green(cell)
         action = fit_source_canvas(keyed)
@@ -134,13 +159,17 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Extract a 3x2 green-screen AI action grid into action source PNGs.")
     parser.add_argument("--input", type=Path, default=DEFAULT_INPUT)
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUTPUT)
-    parser.add_argument("--preview", type=Path, default=DEFAULT_PREVIEW)
+    parser.add_argument("--preview", type=Path)
+    parser.add_argument("--preset", choices=sorted(ACTION_PRESETS), default=None)
     args = parser.parse_args()
 
-    saved = extract_grid(args.input, args.out_dir, args.preview)
+    preset = args.preset or infer_preset(args.input)
+    preview = args.preview or ACTION_PRESETS[preset]["preview"]
+    saved = extract_grid(args.input, args.out_dir, preview, preset)
     for path in saved:
         print(path)
-    print(f"Preview: {args.preview}")
+    print(f"Preset: {preset}")
+    print(f"Preview: {preview}")
 
 
 if __name__ == "__main__":

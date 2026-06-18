@@ -226,6 +226,9 @@
                 <Button Style="{StaticResource GlassButton}" Content="正餐" Tag="feed_meal" Click="ActionTestButton_Click" Margin="0,4,4,4" />
                 <Button Style="{StaticResource GlassButton}" Content="热茶" Tag="rest_tea" Click="ActionTestButton_Click" Margin="4" />
                 <Button Style="{StaticResource GlassButton}" Content="开心" Tag="idle_cheer_m8" Click="ActionTestButton_Click" Margin="4,4,0,4" />
+                <Button Style="{StaticResource GlassButton}" Content="拍照" Tag="photo_m8" Click="ActionTestButton_Click" Margin="0,4,4,4" />
+                <Button Style="{StaticResource GlassButton}" Content="画画" Tag="draw_m8" Click="ActionTestButton_Click" Margin="4" />
+                <Button Style="{StaticResource GlassButton}" Content="吐舌" Tag="tongue_m8" Click="ActionTestButton_Click" Margin="4,4,0,4" />
               </UniformGrid>
             </ScrollViewer>
           </TabItem>

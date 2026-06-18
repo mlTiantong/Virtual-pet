@@ -314,6 +314,51 @@
       "frameWidth": 768,
       "frameHeight": 768,
       "frames": []
+    },
+    "photo_m8": {
+      "id": "photo_m8",
+      "type": "spritesheet",
+      "fps": 10,
+      "loop": false,
+      "durationMs": 1000,
+      "returnToIdle": true,
+      "sheet": "runtime/sheets/photo_m8.png",
+      "columns": 4,
+      "rows": 3,
+      "frameCount": 10,
+      "frameWidth": 768,
+      "frameHeight": 768,
+      "frames": []
+    },
+    "draw_m8": {
+      "id": "draw_m8",
+      "type": "spritesheet",
+      "fps": 8,
+      "loop": false,
+      "durationMs": 1200,
+      "returnToIdle": true,
+      "sheet": "runtime/sheets/draw_m8.png",
+      "columns": 4,
+      "rows": 3,
+      "frameCount": 12,
+      "frameWidth": 768,
+      "frameHeight": 768,
+      "frames": []
+    },
+    "tongue_m8": {
+      "id": "tongue_m8",
+      "type": "spritesheet",
+      "fps": 10,
+      "loop": false,
+      "durationMs": 900,
+      "returnToIdle": true,
+      "sheet": "runtime/sheets/tongue_m8.png",
+      "columns": 4,
+      "rows": 3,
+      "frameCount": 10,
+      "frameWidth": 768,
+      "frameHeight": 768,
+      "frames": []
     }
   }
 }
